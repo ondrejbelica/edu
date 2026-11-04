@@ -1,0 +1,271 @@
+<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HSV vs HSL</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: neutrální šedý stůl jako v korekční místnosti; dvě roviny modelů vedle sebe, pod nimi srovnání a tvary */
+:root{
+  --bg:#ececec; --panel:#f8f8f8; --fg:#1b1b1b; --muted:#5e5e5e; --line:#cfcfcf; --hsv:#2457c5; --hsl:#b4471f;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1c1c;--panel:#262626;--fg:#ececec;--muted:#a6a6a6;--line:#3c3c3c;--hsv:#7fa2ff;--hsl:#ff9a6e;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1c1c1c;--panel:#262626;--fg:#ececec;--muted:#a6a6a6;--line:#3c3c3c;--hsv:#7fa2ff;--hsl:#ff9a6e;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+.wrap{max-width:1040px;margin:0 auto;display:grid;gap:32px}
+h1,h2{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(2rem,6vw,3.4rem);font-weight:700;letter-spacing:-.02em}
+h2{font-size:1.45rem;font-weight:700}
+p{margin:0;max-width:65ch}
+.lead{color:var(--muted);font-size:1.05rem;margin-top:10px}
+.eyebrow{font:500 .75rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tag-hsv{color:var(--hsv)} .tag-hsl{color:var(--hsl)}
+header{display:grid;gap:6px}
+
+.swatchbar{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+#swatch{width:96px;height:96px;border-radius:10px;border:1px solid var(--line)}
+.readout{display:grid;gap:4px;font:500 .95rem var(--mono);font-variant-numeric:tabular-nums;min-width:0}
+.readout span b{font-weight:500;color:var(--muted);display:inline-block;width:3.2em}
+.hue-row{grid-column:1/-1;display:grid;gap:6px}
+.hue-row label{font:500 .8rem var(--mono);color:var(--muted)}
+input[type=range]{width:100%;accent-color:var(--fg)}
+#hue{appearance:none;-webkit-appearance:none;height:16px;border-radius:8px;background:linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
+#hue::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid #222}
+#hue::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid #222}
+.presets{display:flex;flex-wrap:wrap;gap:8px;grid-column:1/-1}
+.presets button{font:500 .85rem var(--body);padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer;display:flex;gap:8px;align-items:center}
+.presets button i{width:14px;height:14px;border-radius:50%;border:1px solid var(--line)}
+.presets button:hover{border-color:var(--fg)}
+button:focus-visible,input:focus-visible,canvas:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+
+.models{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:20px}
+.model{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:14px;min-width:0}
+.model.hsv{border-top:4px solid var(--hsv)} .model.hsl{border-top:4px solid var(--hsl)}
+.plane{display:grid;grid-template-columns:auto 1fr;grid-template-rows:1fr auto;gap:6px;align-items:stretch}
+.plane canvas{width:100%;max-width:100%;aspect-ratio:1;border-radius:6px;touch-action:none;cursor:crosshair;display:block}
+.yax{writing-mode:vertical-rl;transform:rotate(180deg);font:500 .75rem var(--mono);color:var(--muted);display:flex;justify-content:space-between}
+.xax{grid-column:2;font:500 .75rem var(--mono);color:var(--muted);display:flex;justify-content:space-between}
+.ctl{display:grid;grid-template-columns:7.5em 1fr 3.2em;gap:10px;align-items:center;font-size:.9rem}
+.ctl output{font:500 .9rem var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.note{font-size:.92rem;color:var(--muted)}
+.note strong{color:var(--fg)}
+
+.strips{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:14px}
+.strip{display:grid;gap:4px}
+.strip canvas{width:100%;height:44px;border-radius:6px;display:block}
+.strip .lbl{font:500 .8rem var(--mono);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+
+.shapes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:20px}
+.shape{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:10px}
+.shape svg{width:100%;max-width:300px;height:auto;margin:0 auto;display:block}
+.shape svg text{fill:var(--fg);font:500 12px var(--mono)}
+.shape svg .ln{stroke:var(--muted);fill:none;stroke-width:1.2}
+
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+.tbl{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font:500 .75rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+td:first-child{font-weight:600}
+code{font-family:var(--mono);font-size:.9em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Barevné modely · interaktivní učebnice</div>
+    <h1>HSV vs HSL</h1>
+    <p class="lead">Oba modely popisují barvu třemi čísly: <strong>odstín (H)</strong>, <strong>sytost (S)</strong> a třetí hodnotou, která řídí světlo. Odstín mají stejný. Liší se v tom, co znamená „sytost“ a kde v prostoru leží bílá. Klikej nebo táhni v obou čtvercích – druhý model se vždy přepočítá.</p>
+  </header>
+
+  <section class="swatchbar" aria-label="Vybraná barva">
+    <div id="swatch"></div>
+    <div class="readout">
+      <span><b>HEX</b><span id="r-hex"></span></span>
+      <span><b>RGB</b><span id="r-rgb"></span></span>
+      <span class="tag-hsv"><b>HSV</b><span id="r-hsv"></span></span>
+      <span class="tag-hsl"><b>HSL</b><span id="r-hsl"></span></span>
+    </div>
+    <div class="hue-row">
+      <label for="hue">H – odstín (společný pro oba modely): <span id="hue-o"></span>°</label>
+      <input type="range" id="hue" min="0" max="359" value="210">
+    </div>
+    <div class="presets" id="presets"></div>
+  </section>
+
+  <section class="models">
+    <div class="model hsv">
+      <div>
+        <div class="eyebrow tag-hsv">Model HSV · Hue, Saturation, Value</div>
+        <h2>Jas jako „kolik světla svítí“</h2>
+      </div>
+      <div class="plane">
+        <div class="yax"><span>V 0 %</span><span>V 100 %</span></div>
+        <canvas id="c-hsv" width="320" height="320" tabindex="0" aria-label="Rovina sytost × jas modelu HSV"></canvas>
+        <div class="xax"><span>S 0 %</span><span>S 100 %</span></div>
+      </div>
+      <div class="ctl"><label for="sv">Sytost S</label><input type="range" id="sv" min="0" max="100"><output id="sv-o"></output></div>
+      <div class="ctl"><label for="vv">Jas V</label><input type="range" id="vv" min="0" max="100"><output id="vv-o"></output></div>
+      <p class="note">Čistá barva je v <strong>pravém horním rohu</strong> (S 100, V 100). Bílá je v <strong>levém horním rohu</strong> (S 0, V 100). Celý spodní okraj je černý. Pastelku uděláš tak, že <strong>ubereš sytost</strong>.</p>
+    </div>
+
+    <div class="model hsl">
+      <div>
+        <div class="eyebrow tag-hsl">Model HSL · Hue, Saturation, Lightness</div>
+        <h2>Světlost jako „od černé k bílé“</h2>
+      </div>
+      <div class="plane">
+        <div class="yax"><span>L 0 %</span><span>L 100 %</span></div>
+        <canvas id="c-hsl" width="320" height="320" tabindex="0" aria-label="Rovina sytost × světlost modelu HSL"></canvas>
+        <div class="xax"><span>S 0 %</span><span>S 100 %</span></div>
+      </div>
+      <div class="ctl"><label for="sl">Sytost S</label><input type="range" id="sl" min="0" max="100"><output id="sl-o"></output></div>
+      <div class="ctl"><label for="ll">Světlost L</label><input type="range" id="ll" min="0" max="100"><output id="ll-o"></output></div>
+      <p class="note">Čistá barva je <strong>uprostřed pravého okraje</strong> (S 100, L 50). Celý horní okraj je bílý, celý spodní černý. Pastelku uděláš tak, že <strong>přidáš světlost</strong>.</p>
+    </div>
+  </section>
+
+  <section class="strips" aria-label="Srovnání třetí složky">
+    <div>
+      <div class="eyebrow">Pokus</div>
+      <h2>Co se stane, když vytáhneš třetí složku od 0 do 100 %</h2>
+    </div>
+    <p class="note">Oba pruhy mají aktuální odstín a sytost 100 %. HSV skončí u čisté barvy, HSL jde přes čistou barvu až do bílé.</p>
+    <div class="strip">
+      <div class="lbl"><span class="tag-hsv">HSV: V 0 → 100 %</span><span>černá → čistá barva</span></div>
+      <canvas id="s-hsv" width="600" height="44"></canvas>
+    </div>
+    <div class="strip">
+      <div class="lbl"><span class="tag-hsl">HSL: L 0 → 100 %</span><span>černá → čistá barva (50 %) → bílá</span></div>
+      <canvas id="s-hsl" width="600" height="44"></canvas>
+    </div>
+  </section>
+
+  <section class="shapes">
+    <div class="shape">
+      <div class="eyebrow tag-hsv">Tvar HSV</div>
+      <h2>Kužel (šestiboký jehlan)</h2>
+      <svg viewBox="0 0 300 250" role="img" aria-label="Kužel HSV: černá ve špičce dole, bílá ve středu horní podstavy">
+        <defs>
+          <linearGradient id="g1" x1="0" x2="1"><stop offset="0" stop-color="#f00"/><stop offset=".33" stop-color="#0f0"/><stop offset=".66" stop-color="#00f"/><stop offset="1" stop-color="#f00"/></linearGradient>
+          <radialGradient id="g2"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+        </defs>
+        <polygon points="40,50 260,50 150,220" fill="#000" opacity=".85"/>
+        <ellipse cx="150" cy="50" rx="110" ry="26" fill="url(#g1)"/>
+        <ellipse cx="150" cy="50" rx="110" ry="26" fill="url(#g2)"/>
+        <line class="ln" x1="150" y1="50" x2="150" y2="220" stroke-dasharray="4 4"/>
+        <text x="158" y="238">V = 0 → černá</text>
+        <text x="158" y="44" style="fill:#111">bílá</text>
+        <text x="200" y="98">V = 100 % nahoře</text>
+      </svg>
+      <p class="note">Všechny nejsvětlejší barvy (bílá i čistá červená) leží na <strong>stejné horní podstavě</strong>. V HSV jsou si „rovné“.</p>
+    </div>
+    <div class="shape">
+      <div class="eyebrow tag-hsl">Tvar HSL</div>
+      <h2>Dvojkužel</h2>
+      <svg viewBox="0 0 300 250" role="img" aria-label="Dvojkužel HSL: černá dole, bílá nahoře, čisté barvy na obvodu uprostřed">
+        <polygon points="40,125 260,125 150,10" fill="#fff" stroke="var(--line)"/>
+        <polygon points="40,125 260,125 150,240" fill="#000" opacity=".85"/>
+        <ellipse cx="150" cy="125" rx="110" ry="24" fill="url(#g1)"/>
+        <line class="ln" x1="150" y1="10" x2="150" y2="240" stroke-dasharray="4 4"/>
+        <text x="160" y="22">L = 100 % → bílá</text>
+        <text x="160" y="236">L = 0 → černá</text>
+        <text x="200" y="168">L = 50 % čisté barvy</text>
+      </svg>
+      <p class="note">Bílá je <strong>špička nahoře</strong>, černá špička dole. Čisté barvy leží na „rovníku“ v polovině výšky. Tvar je souměrný.</p>
+    </div>
+  </section>
+
+  <section class="tbl">
+    <table>
+      <thead><tr><th>Vlastnost</th><th class="tag-hsv">HSV</th><th class="tag-hsl">HSL</th></tr></thead>
+      <tbody>
+        <tr><td>Třetí složka</td><td>V – jas (value), maximum ze složek R, G, B</td><td>L – světlost (lightness), průměr největší a nejmenší složky</td></tr>
+        <tr><td>Čistá červená</td><td><code>0°, 100 %, 100 %</code></td><td><code>0°, 100 %, 50 %</code></td></tr>
+        <tr><td>Bílá</td><td><code>S 0 %, V 100 %</code></td><td><code>L 100 %</code> (sytost nehraje roli)</td></tr>
+        <tr><td>Černá</td><td><code>V 0 %</code></td><td><code>L 0 %</code></td></tr>
+        <tr><td>Zesvětlení barvy</td><td>snížit S (přimíchat bílou)</td><td>zvýšit L nad 50 %</td></tr>
+        <tr><td>Ztmavení barvy</td><td>snížit V (přimíchat černou)</td><td>snížit L pod 50 %</td></tr>
+        <tr><td>Kde ho potkáš</td><td>výběr barvy ve Photoshopu, GIMPu, Krita</td><td>CSS na webu (<code>hsl()</code>), grafické knihovny</td></tr>
+        <tr><td>Malířská představa</td><td>pigment, do kterého přidáváš bílou nebo černou</td><td>stupnice šedi, na kterou „nasadíš“ barvu</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <p class="note">Pozor: ani V, ani L neodpovídá tomu, jak světlou barvu vnímá oko. Čistá žlutá a čistá modrá mají stejné V i L, a přesto žlutá působí mnohem světleji. Na to slouží jiné modely, např. Lab nebo luma Y′ ve videu.</p>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const st={h:210, sv:{s:.7,v:.85}, sl:{s:0,l:0}};
+
+function hsv2rgb(h,s,v){const f=n=>{const k=(n+h/60)%6;return v-v*s*Math.max(0,Math.min(k,4-k,1))};return[f(5),f(3),f(1)]}
+function hsl2rgb(h,s,l){const a=s*Math.min(l,1-l);const f=n=>{const k=(n+h/30)%12;return l-a*Math.max(-1,Math.min(k-3,9-k,1))};return[f(0),f(8),f(4)]}
+function hsvToHsl(s,v){const l=v*(1-s/2);const sl=(l===0||l===1)?0:(v-l)/Math.min(l,1-l);return{s:sl,l}}
+function hslToHsv(s,l){const v=l+s*Math.min(l,1-l);const sv=v===0?0:2*(1-l/v);return{s:sv,v}}
+const to255=c=>c.map(x=>Math.round(Math.max(0,Math.min(1,x))*255));
+const hex=c=>'#'+to255(c).map(x=>x.toString(16).padStart(2,'0')).join('');
+const pct=x=>Math.round(x*100);
+
+function drawPlane(cv,fn){
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height,img=ctx.createImageData(W,H);
+  for(let y=0;y<H;y++){const b=1-y/(H-1);for(let x=0;x<W;x++){const c=to255(fn(st.h,x/(W-1),b));const i=(y*W+x)*4;img.data[i]=c[0];img.data[i+1]=c[1];img.data[i+2]=c[2];img.data[i+3]=255}}
+  ctx.putImageData(img,0,0);return ctx;
+}
+function marker(ctx,x,y,rgb){const W=ctx.canvas.width,H=ctx.canvas.height,px=x*(W-1),py=(1-y)*(H-1);
+  const lum=.3*rgb[0]+.59*rgb[1]+.11*rgb[2];ctx.lineWidth=3;ctx.strokeStyle=lum>.5?'#111':'#fff';
+  ctx.beginPath();ctx.arc(px,py,10,0,Math.PI*2);ctx.stroke();}
+function strip(cv,fn){const ctx=cv.getContext('2d'),W=cv.width,H=cv.height;for(let x=0;x<W;x++){ctx.fillStyle=hex(fn(st.h,1,x/(W-1)));ctx.fillRect(x,0,1,H)}}
+
+function render(){
+  const rgb=hsv2rgb(st.h,st.sv.s,st.sv.v);
+  const c1=drawPlane($('c-hsv'),hsv2rgb);marker(c1,st.sv.s,st.sv.v,rgb);
+  const c2=drawPlane($('c-hsl'),hsl2rgb);marker(c2,st.sl.s,st.sl.l,rgb);
+  strip($('s-hsv'),hsv2rgb);strip($('s-hsl'),hsl2rgb);
+  $('swatch').style.background=hex(rgb);
+  $('r-hex').textContent=hex(rgb).toUpperCase();
+  $('r-rgb').textContent=to255(rgb).join(', ');
+  $('r-hsv').textContent=`${st.h}°, ${pct(st.sv.s)} %, ${pct(st.sv.v)} %`;
+  $('r-hsl').textContent=`${st.h}°, ${pct(st.sl.s)} %, ${pct(st.sl.l)} %`;
+  $('hue-o').textContent=st.h;$('hue').value=st.h;
+  $('sv').value=pct(st.sv.s);$('sv-o').textContent=pct(st.sv.s)+' %';
+  $('vv').value=pct(st.sv.v);$('vv-o').textContent=pct(st.sv.v)+' %';
+  $('sl').value=pct(st.sl.s);$('sl-o').textContent=pct(st.sl.s)+' %';
+  $('ll').value=pct(st.sl.l);$('ll-o').textContent=pct(st.sl.l)+' %';
+}
+function setHSV(s,v){st.sv={s,v};st.sl=hsvToHsl(s,v);render()}
+function setHSL(s,l){st.sl={s,l};st.sv=hslToHsv(s,l);render()}
+
+function bindPlane(cv,set,get){
+  const pick=e=>{const r=cv.getBoundingClientRect();const x=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));const y=Math.max(0,Math.min(1,1-(e.clientY-r.top)/r.height));set(x,y)};
+  cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);pick(e)});
+  cv.addEventListener('pointermove',e=>{if(cv.hasPointerCapture(e.pointerId))pick(e)});
+  cv.addEventListener('keydown',e=>{const [x,y]=get();const d=.02;const m={ArrowLeft:[-d,0],ArrowRight:[d,0],ArrowUp:[0,d],ArrowDown:[0,-d]}[e.key];if(m){e.preventDefault();set(Math.max(0,Math.min(1,x+m[0])),Math.max(0,Math.min(1,y+m[1])))}});
+}
+bindPlane($('c-hsv'),setHSV,()=>[st.sv.s,st.sv.v]);
+bindPlane($('c-hsl'),setHSL,()=>[st.sl.s,st.sl.l]);
+$('hue').addEventListener('input',e=>{st.h=+e.target.value;render()});
+$('sv').addEventListener('input',e=>setHSV(e.target.value/100,st.sv.v));
+$('vv').addEventListener('input',e=>setHSV(st.sv.s,e.target.value/100));
+$('sl').addEventListener('input',e=>setHSL(e.target.value/100,st.sl.l));
+$('ll').addEventListener('input',e=>setHSL(st.sl.s,e.target.value/100));
+
+const presets=[
+  ['Čistá barva',()=>setHSV(1,1)],
+  ['Pastelová',()=>setHSL(1,.82)],
+  ['Tmavá',()=>setHSV(1,.4)],
+  ['Bílá',()=>setHSV(0,1)],
+  ['Šedá',()=>setHSV(0,.5)],
+  ['Černá',()=>setHSV(0,0)]
+];
+const pw=$('presets');
+presets.forEach(([n,f])=>{const b=document.createElement('button');b.type='button';b.innerHTML='<i></i>'+n;b.addEventListener('click',f);pw.appendChild(b)});
+function paintPresetDots(){const dots=pw.querySelectorAll('i');const cols=[hsv2rgb(st.h,1,1),hsl2rgb(st.h,1,.82),hsv2rgb(st.h,1,.4),[1,1,1],[.5,.5,.5],[0,0,0]];dots.forEach((d,i)=>d.style.background=hex(cols[i]))}
+const _r=render;render=function(){_r();paintPresetDots()};
+setHSV(.7,.85);
+</script>
+
+</html>
