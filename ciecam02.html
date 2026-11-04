@@ -1,0 +1,356 @@
+<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CIECAM02 a barevná stálost</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: neutrální šedá; nahoře dvojice scén „co dopadá na oko“ a „co vidíme“, pod nimi měření, okolí obrazu, Hunt/Stevens a schéma modelu */
+:root{
+  --bg:#ececec; --panel:#f8f8f8; --fg:#1b1b1b; --muted:#5e5e5e; --line:#cfcfcf; --plot:#e2e2e2; --grid:#c4c4c4;
+  --c1:#c4392b; --c2:#2457c5; --c3:#2c8a3c; --ok:#2c8a3c; --bad:#b4471f;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1c1c;--panel:#262626;--fg:#ececec;--muted:#a6a6a6;--line:#3c3c3c;--plot:#1a1a1a;--grid:#383838;--c1:#ff7a6b;--c2:#7fa2ff;--c3:#6fd07f;--ok:#6fd07f;--bad:#ff9a6e;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1c1c1c;--panel:#262626;--fg:#ececec;--muted:#a6a6a6;--line:#3c3c3c;--plot:#1a1a1a;--grid:#383838;--c1:#ff7a6b;--c2:#7fa2ff;--c3:#6fd07f;--ok:#6fd07f;--bad:#ff9a6e;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+.wrap{max-width:1080px;margin:0 auto;display:grid;gap:32px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(2rem,6vw,3.4rem);font-weight:700;letter-spacing:-.02em}
+h2{font-size:1.45rem;font-weight:700} h3{font-size:1.1rem;font-weight:700}
+p{margin:0;max-width:65ch}
+.lead{color:var(--muted);font-size:1.05rem;margin-top:10px}
+.eyebrow{font:500 .75rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+header{display:grid;gap:6px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:14px;min-width:0}
+.note{font-size:.92rem;color:var(--muted)} .note strong{color:var(--fg)}
+button{font:500 .88rem var(--body);padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+button:hover{border-color:var(--fg)}
+button.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button:focus-visible,input:focus-visible,select:focus-visible,.patch:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+input[type=range]{width:100%;accent-color:var(--fg)}
+canvas{display:block;width:100%;max-width:100%;border-radius:8px}
+.ctl{display:grid;grid-template-columns:8.5em 1fr 4.6em;gap:10px;align-items:center;font-size:.9rem}
+.ctl output{font:500 .9rem var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{display:flex;gap:8px;align-items:center}
+.chips i{width:14px;height:14px;border-radius:50%;border:1px solid var(--line)}
+
+.scenes{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:700px){.scenes{grid-template-columns:1fr}}
+.scene{display:grid;gap:8px}
+.scene h3{font-size:1rem}
+.room{border-radius:12px;padding:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;transition:background .3s}
+.patch{aspect-ratio:1.35;border-radius:6px;display:flex;align-items:flex-end;padding:6px 8px;font:500 .72rem var(--mono);cursor:pointer;border:2px solid transparent;transition:background .3s}
+.patch.sel{border-color:var(--fg);box-shadow:0 0 0 2px var(--panel) inset}
+.controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px 24px}
+@media (max-width:700px){.controls{grid-template-columns:1fr}}
+.auto{display:flex;gap:8px;align-items:center;font-size:.9rem}
+
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+th{font:500 .74rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+td.n{font:500 .92rem var(--mono);font-variant-numeric:tabular-nums}
+td .chg{font:500 .8rem var(--mono);margin-left:6px}
+.chg.big{color:var(--bad)} .chg.small{color:var(--ok)}
+.sw2{display:inline-block;width:22px;height:22px;border-radius:5px;vertical-align:middle;border:1px solid var(--line)}
+
+.ramps{display:grid;gap:14px}
+.ramp{display:grid;gap:6px}
+.rampbox{padding:16px;border-radius:10px;display:flex;gap:4px}
+.rampbox i{flex:1;aspect-ratio:1;border-radius:3px;display:flex;align-items:flex-end;justify-content:center;font:500 .62rem var(--mono);padding-bottom:3px;font-style:normal}
+.rlabel{font:500 .82rem var(--mono);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.surr{display:flex;gap:8px;flex-wrap:wrap}
+
+.hunt{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:700px){.hunt{grid-template-columns:1fr}}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font:500 .8rem var(--mono)}
+.legend span{display:flex;gap:6px;align-items:center}
+.legend i{display:inline-block;width:16px;height:3px;border-radius:2px}
+
+.pipe{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}
+.pstep{flex:1 1 150px;background:var(--bg);border-radius:10px;padding:12px;display:grid;gap:4px;align-content:start;position:relative}
+.pstep b{font:700 .8rem var(--mono);color:var(--muted)}
+.pstep h3{font-size:.98rem}
+.pstep p{font-size:.85rem;color:var(--muted)}
+.explain{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px}
+.explain .card{gap:8px} .explain p{font-size:.95rem}
+.ttl{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Vzhled barev · interaktivní učebnice</div>
+    <h1>CIECAM02 a barevná stálost</h1>
+    <p class="lead">Bílý papír vypadá bíle za poledního slunce, pod žárovkou i ve stínu, přestože do oka z něj pokaždé jde jiné světlo. Této schopnosti se říká <strong>barevná (percepční) stálost</strong>. XYZ ani Lab ji nepopisují dobře. <strong>CIECAM02</strong> (CIE, 2002) je model vzhledu barev, který počítá s osvětlením, jasem i okolím a předpovídá, jak barvu skutečně vnímáme.</p>
+  </header>
+
+  <section class="card">
+    <div>
+      <div class="eyebrow">Pokus 1 · Barevná stálost</div>
+      <h2>Stejné předměty, jiné světlo</h2>
+    </div>
+    <div class="chips" id="illums"></div>
+    <div class="scenes">
+      <div class="scene">
+        <h3>Co dopadá na oko</h3>
+        <div class="room" id="roomRaw"></div>
+        <p class="note">Takové světlo zachytí fotoaparát bez vyvážení bílé nebo přístroj.</p>
+      </div>
+      <div class="scene">
+        <h3>Co vidíme po přizpůsobení oka</h3>
+        <div class="room" id="roomSeen"></div>
+        <p class="note">Předpověď CIECAM02 při zvolené míře adaptace D.</p>
+      </div>
+    </div>
+    <div class="controls">
+      <div style="display:grid;gap:10px">
+        <div class="ctl"><label for="D">Adaptace D</label><input type="range" id="D" min="0" max="1" step="0.01"><output id="D-o"></output></div>
+        <label class="auto"><input type="checkbox" id="Dauto" checked> D spočítat z jasu a okolí (podle modelu)</label>
+        <div><button type="button" id="enter">Simuluj vstup do místnosti</button></div>
+      </div>
+      <p class="note"><strong>D = 0</strong> znamená žádné přizpůsobení, vidíme totéž co přístroj. <strong>D = 1</strong> je úplná stálost, předměty vypadají jako za denního světla. Člověk se přizpůsobí z velké části, ale ne úplně. Proto pokoj pod žárovkou působí i po chvíli trochu teple. Tlačítko ukáže, jak se oko přizpůsobuje během několika sekund.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div>
+      <div class="eyebrow">Přístroj vs. člověk</div>
+      <h2>Co se změní a co zůstane</h2>
+    </div>
+    <p class="note">Klepni na libovolný předmět ve scéně. Porovnej, jak se jeho hodnoty změní pod zvoleným světlem. Souřadnice xy a Lab se mění hodně, korelaty vzhledu z CIECAM02 (světlost J, chroma C, odstín h) zůstávají téměř stejné. Tak to vnímá i člověk.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Veličina</th><th>Za denního světla (D65)</th><th id="thIll">Pod žárovkou</th></tr></thead>
+      <tbody id="meas"></tbody>
+    </table></div>
+  </section>
+
+  <section class="card">
+    <div>
+      <div class="eyebrow">Pokus 2 · Okolí obrazu</div>
+      <h2>Proč má kino jinou gamu než monitor</h2>
+    </div>
+    <p class="note">CIECAM02 rozlišuje <strong>průměrné</strong> okolí (denní světlo, kancelář), <strong>tlumené</strong> (obývák s televizí) a <strong>tmavé</strong> (kino). V tmavém okolí stejný obraz působí <strong>méně kontrastně</strong>: tmavé tóny vypadají světlejší (Bartlesonův–Brenemanův efekt). Čísla pod políčky jsou světlost J, kterou model předpovídá.</p>
+    <div class="surr" id="surrBtns"></div>
+    <div class="ramps">
+      <div class="ramp"><div class="rlabel"><span>Původní obraz v průměrném okolí</span><span id="lab1"></span></div><div class="rampbox" id="r1" style="background:#8a8a8a"></div></div>
+      <div class="ramp"><div class="rlabel"><span id="l2">Totéž v tmavém okolí</span><span id="lab2"></span></div><div class="rampbox" id="r2" style="background:#000"></div></div>
+      <div class="ramp"><div class="rlabel"><span id="l3">Upraveno, aby v tmavém okolí vypadal stejně</span><span id="lab3"></span></div><div class="rampbox" id="r3" style="background:#000"></div></div>
+    </div>
+    <p class="note" id="gammaNote"></p>
+  </section>
+
+  <section class="card">
+    <div>
+      <div class="eyebrow">Pokus 3 · Jas scény</div>
+      <h2>Hunt a Stevens: na slunci jsou barvy pestřejší</h2>
+    </div>
+    <div class="ctl"><label for="La">Jas okolí L<sub>A</sub></label><input type="range" id="La" min="-1" max="4" step="0.01" value="1.7"><output id="La-o"></output></div>
+    <p class="note" id="laName"></p>
+    <div class="hunt">
+      <div style="display:grid;gap:8px">
+        <h3>Huntův efekt · pestrost M</h3>
+        <div class="legend"><span><i style="background:var(--c1)"></i>jablko</span><span><i style="background:var(--c2)"></i>modrý hrnek</span><span><i style="background:var(--c3)"></i>list</span></div>
+        <canvas id="chM" aria-label="Graf pestrosti M podle jasu"></canvas>
+        <p class="note">Tentýž předmět se stejnou odrazivostí působí na slunci výrazně <strong>pestřeji</strong> než za šera. Při měsíčním světle barvy skoro mizí.</p>
+      </div>
+      <div style="display:grid;gap:8px">
+        <h3>Stevensův efekt · jas Q</h3>
+        <div class="legend"><span><i style="background:var(--fg)"></i>bílý papír</span><span><i style="background:var(--muted)"></i>šedá karta 18 %</span><span><i style="background:var(--bad)"></i>uhlí</span></div>
+        <canvas id="chQ" aria-label="Graf jasu Q podle jasu okolí"></canvas>
+        <p class="note">Se vzrůstajícím osvětlením se rozdíly jasu mezi světlými a tmavými předměty <strong>zvětšují</strong>. Scéna na slunci působí kontrastněji, i když poměr odrazivostí zůstal stejný.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div>
+      <div class="eyebrow">Uvnitř modelu</div>
+      <h2>Jak CIECAM02 počítá</h2>
+    </div>
+    <div class="pipe">
+      <div class="pstep"><b>1</b><h3>XYZ + podmínky</h3><p>barva, bílá osvětlení, jas okolí L<sub>A</sub>, pozadí Y<sub>b</sub>, typ okolí</p></div>
+      <div class="pstep"><b>2</b><h3>Adaptace CAT02</h3><p>převod na signály čípků a jejich vyvážení podle bílé s mírou D</p></div>
+      <div class="pstep"><b>3</b><h3>Čípky HPE</h3><p>přepočet na odezvy čípků L, M, S podle Hunta, Pointera a Estéveze</p></div>
+      <div class="pstep"><b>4</b><h3>Komprese</h3><p>nelineární „zesilovač“ jako u nervových buněk, závisí na jasu (F<sub>L</sub>)</p></div>
+      <div class="pstep"><b>5</b><h3>Protibarvy</h3><p>signál A (achromatický), a (červená–zelená), b (žlutá–modrá)</p></div>
+      <div class="pstep"><b>6</b><h3>Korelaty vzhledu</h3><p>J, Q, C, M, s, h: to, jak barvu popíše pozorovatel</p></div>
+    </div>
+  </section>
+
+  <section class="ttl">
+    <table>
+      <thead><tr><th>Korelát</th><th>Česky</th><th>Otázka, na kterou odpovídá</th></tr></thead>
+      <tbody>
+        <tr><td><strong>J</strong></td><td>světlost</td><td>Jak světlá je ve srovnání s bílou? (relativní, jako L* v Lab)</td></tr>
+        <tr><td><strong>Q</strong></td><td>jas</td><td>Kolik světla z ní vnímám? (absolutní, roste s osvětlením)</td></tr>
+        <tr><td><strong>C</strong></td><td>chroma</td><td>Jak barevná je ve srovnání s bílou?</td></tr>
+        <tr><td><strong>M</strong></td><td>pestrost</td><td>Jak výrazně barevně působí? (absolutní, roste s osvětlením)</td></tr>
+        <tr><td><strong>s</strong></td><td>nasycení</td><td>Jak barevná je vzhledem ke svému vlastnímu jasu?</td></tr>
+        <tr><td><strong>h</strong></td><td>úhel odstínu</td><td>Je červená, žlutá, zelená, nebo modrá?</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="explain">
+    <div class="card"><div class="eyebrow">Proč nestačí Lab</div><h3>Lab zná jen jednu bílou</h3><p>Lab vyrovná osvětlení jen hrubým vydělením bílou v XYZ a nic neví o jasu ani o okolí. Pro barvy pod jiným světlem nebo na obrazovce v tmavé místnosti dává zkreslené výsledky.</p></div>
+    <div class="card"><div class="eyebrow">Barevná stálost</div><h3>Mozek odečítá světlo</h3><p>Oko zesiluje a zeslabuje citlivost čípků tak, aby bílá zůstala bílou. Proto se fotoaparátu musí nastavovat vyvážení bílé, zatímco my ho máme „zabudované“. Přizpůsobení trvá desítky sekund až minuty a nikdy není úplné.</p></div>
+    <div class="card"><div class="eyebrow">Praxe</div><h3>Kde se modely vzhledu používají</h3><p>Správa barev (převody mezi monitorem, tiskem a projekcí), mapování gamutu, převody SDR a HDR, srovnání záběrů natočených pod různým světlem. Varianta CAM02-UCS slouží i pro přesnější barevné rozdíly než ΔE2000.</p></div>
+    <div class="card"><div class="eyebrow">Co dál</div><h3>CAM16</h3><p>V roce 2016 vznikl zpřesněný a numericky stabilnější nástupce CAM16, který CIE v roce 2022 doporučila jako CIECAM16. Princip zůstal stejný. Z něj vychází i prostor HCT, se kterým pracuje Google v Material Design.</p></div>
+  </section>
+
+  <p class="note">Barvy předmětů pod jiným světlem jsou simulované přepočtem CAT02 (bez skutečných spekter odrazivosti), což pro výuku stačí. Monitor zobrazuje vše jako barvy pod D65. Výsledek je tedy přiblížení, nejlépe působí v tlumeně osvětlené místnosti.</p>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=(v,d=1)=>(isFinite(v)?v:0).toFixed(d).replace('.',',');
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const mv=(m,v)=>m.map(r=>r[0]*v[0]+r[1]*v[1]+r[2]*v[2]);
+function inv3(m){const[a,b,c]=m[0],[d,e,f]=m[1],[g,h,i]=m[2];const D=a*(e*i-f*h)-b*(d*i-f*g)+c*(d*h-e*g);return[[(e*i-f*h)/D,(c*h-b*i)/D,(b*f-c*e)/D],[(f*g-d*i)/D,(a*i-c*g)/D,(c*d-a*f)/D],[(d*h-e*g)/D,(b*g-a*h)/D,(a*e-b*d)/D]]}
+const mm=(A,B)=>A.map(r=>[0,1,2].map(j=>r[0]*B[0][j]+r[1]*B[1][j]+r[2]*B[2][j]));
+
+/* sRGB */
+const M709=[[3.2406,-1.5372,-0.4986],[-0.9689,1.8758,0.0415],[0.0557,-0.2040,1.0570]],MI709=inv3(M709);
+const gam=c=>c<=0.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-.055,dgam=c=>c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4);
+const srgb2xyz=c=>mv(MI709,c.map(v=>dgam(v/255))).map(v=>v*100);
+function xyz2css(X){const l=mv(M709,X.map(v=>v/100));const m=Math.max(1,...l);return`rgb(${l.map(v=>Math.round(gam(Math.max(0,Math.min(1,v/m)))*255)).join(',')})`}
+const xyY=(x,y,Y=100)=>[x*Y/y,Y,(1-x-y)*Y/y];
+
+/* ---- CIECAM02 ---- */
+const MCAT=[[.7328,.4296,-.1624],[-.7036,1.6975,.0061],[.0030,.0136,.9834]],MCATi=inv3(MCAT);
+const MHPE=[[.38971,.68898,-.07868],[-.22981,1.18340,.04641],[0,0,1]],MHPEi=inv3(MHPE);
+const H2C=mm(MHPE,MCATi),C2H=mm(MCAT,MHPEi);
+const SURR={avg:{F:1,c:.69,Nc:1,name:'průměrné'},dim:{F:.9,c:.59,Nc:.9,name:'tlumené'},dark:{F:.8,c:.525,Nc:.8,name:'tmavé'}};
+function vc(W,La,Yb=20,s='avg',Dset=null){
+  const S=SURR[s],Yw=W[1];let D=Dset==null?S.F*(1-(1/3.6)*Math.exp((-La-42)/92)):Dset;D=Math.max(0,Math.min(1,D));
+  const RGBw=mv(MCAT,W),k=1/(5*La+1),Fl=.2*k**4*(5*La)+.1*(1-k**4)**2*Math.cbrt(5*La);
+  const n=Yb/Yw,z=1.48+Math.sqrt(n),Nbb=.725*Math.pow(n,-.2);
+  const Dg=RGBw.map(v=>Yw*D/v+1-D);
+  const v={W,La,Yb,S,D,Dg,Fl,n,z,Nbb,Ncb:Nbb,Yw};
+  const aw=post(mv(H2C,RGBw.map((x,i)=>x*Dg[i])),Fl);v.Aw=(2*aw[0]+aw[1]+aw[2]/20-.305)*Nbb;return v;
+}
+function post(R,Fl){return R.map(x=>{const t=Math.pow(Fl*Math.abs(x)/100,.42);return Math.sign(x)*400*t/(27.13+t)+.1})}
+function fwd(X,v){
+  const Rc=mv(MCAT,X).map((x,i)=>x*v.Dg[i]),Ra=post(mv(H2C,Rc),v.Fl);
+  const a=Ra[0]-12*Ra[1]/11+Ra[2]/11,b=(Ra[0]+Ra[1]-2*Ra[2])/9;let h=Math.atan2(b,a)*180/Math.PI;if(h<0)h+=360;
+  const et=.25*(Math.cos(h*Math.PI/180+2)+3.8),A=(2*Ra[0]+Ra[1]+Ra[2]/20-.305)*v.Nbb;
+  const J=100*Math.pow(Math.max(0,A/v.Aw),v.S.c*v.z),Q=(4/v.S.c)*Math.sqrt(J/100)*(v.Aw+4)*Math.pow(v.Fl,.25);
+  const t=(50000/13*v.S.Nc*v.Ncb*et*Math.hypot(a,b))/(Ra[0]+Ra[1]+21*Ra[2]/20);
+  const C=Math.pow(t,.9)*Math.sqrt(J/100)*Math.pow(1.64-Math.pow(.29,v.n),.73),M=C*Math.pow(v.Fl,.25),s=100*Math.sqrt(M/Math.max(Q,1e-9));
+  return{J,Q,C,M,s,h};
+}
+function inv(J,C,h,v){
+  if(J<=0)return[0,0,0];
+  const t=Math.pow(C/(Math.sqrt(J/100)*Math.pow(1.64-Math.pow(.29,v.n),.73)),1/.9),hr=h*Math.PI/180;
+  const et=.25*(Math.cos(hr+2)+3.8),A=v.Aw*Math.pow(J/100,1/(v.S.c*v.z));
+  const p2=A/v.Nbb+.305,p3=21/20;let a=0,b=0;
+  if(t>1e-9){const p1=(50000/13*v.S.Nc*v.Ncb*et)/t,sn=Math.sin(hr),cs=Math.cos(hr);
+    if(Math.abs(sn)>=Math.abs(cs)){const p4=p1/sn;b=p2*(2+p3)*(460/1403)/(p4+(2+p3)*(220/1403)*(cs/sn)-27/1403+p3*(6300/1403));a=b*cs/sn}
+    else{const p5=p1/cs;a=p2*(2+p3)*(460/1403)/(p5+(2+p3)*(220/1403)-(27/1403-p3*(6300/1403))*(sn/cs));b=a*sn/cs}}
+  const Ra=[(460*p2+451*a+288*b)/1403,(460*p2-891*a-261*b)/1403,(460*p2-220*a-6300*b)/1403];
+  const Rp=Ra.map(x=>{const d=x-.1;return Math.sign(d)*(100/v.Fl)*Math.pow(27.13*Math.abs(d)/(400-Math.abs(d)),1/.42)});
+  const Rc=mv(C2H,Rp);return mv(MCATi,Rc.map((x,i)=>x/v.Dg[i]));
+}
+/* von Kries v CAT02: jak by předmět vypadal fyzicky pod jiným světlem */
+function underLight(X,Wfrom,Wto){const r=mv(MCAT,X),a=mv(MCAT,Wfrom),b=mv(MCAT,Wto);return mv(MCATi,r.map((x,i)=>x*b[i]/a[i]))}
+
+/* ---- data ---- */
+const D65=xyY(.3127,.3290);
+const ILL=[
+  ['Denní světlo D65 · 6500 K',.3127,.3290],['Zataženo, stín · 7500 K',.2990,.3149],['Zářivka · 4200 K',.3721,.3751],
+  ['LED teplá · 3000 K',.4369,.4041],['Žárovka (A) · 2856 K',.4476,.4074],['Svíčka · 1900 K',.5267,.4133]];
+const OBJ=[['Bílý papír',[243,243,242]],['Šedá karta 18 %',[119,119,118]],['Uhlí',[42,42,42]],['Jablko',[188,38,36]],['Banán',[232,196,58]],['List',[68,124,48]],['Modrý hrnek',[38,78,166]],['Pleť',[212,160,130]],['Levandule',[148,120,190]]].map(([n,c])=>({n,X:srgb2xyz(c)}));
+const st={ill:4,D:null,auto:true,sel:3,La:100,anim:null,surr:'dark'};
+
+/* ---- pokus 1 ---- */
+function W(){const[,x,y]=ILL[st.ill];return xyY(x,y)}
+function autoD(){return vc(W(),st.La).D}
+function curD(){return st.auto&&st.anim==null?autoD():(st.anim!=null?st.anim:st.D)}
+function scene(){
+  const Wi=W(),D=curD(),vI=vc(Wi,st.La,20,'avg',D),vS=vc(D65,st.La,20,'avg',D);
+  const raw=OBJ.map(o=>underLight(o.X,D65,Wi)),seen=raw.map(X=>{const c=fwd(X,vI);return inv(c.J,c.C,c.h,vS)});
+  const paint=(id,arr,bgX)=>{const r=$(id);if(!r.children.length)OBJ.forEach((o,i)=>{const d=document.createElement('div');d.className='patch';d.tabIndex=0;d.textContent=o.n;d.addEventListener('click',()=>{st.sel=i;scene()});d.addEventListener('keydown',e=>{if(e.key==='Enter'){st.sel=i;scene()}});r.appendChild(d)});
+    r.style.background=xyz2css(bgX);[...r.children].forEach((d,i)=>{d.style.background=xyz2css(arr[i]);d.style.color=arr[i][1]>30?'#111':'#fff';d.classList.toggle('sel',i===st.sel)})};
+  const wall=OBJ[1].X.map(v=>v*1.25);
+  paint('roomRaw',raw,underLight(wall,D65,Wi));
+  const wc=fwd(underLight(wall,D65,Wi),vI);paint('roomSeen',seen,inv(wc.J,wc.C,wc.h,vS));
+  $('D').value=D;$('D-o').textContent=fmt(D,2);$('D').disabled=st.auto&&st.anim==null;
+  [...$('illums').children].forEach((b,i)=>b.classList.toggle('on',i===st.ill));
+  measure(raw);
+}
+function lab(X){const f=t=>t>216/24389?Math.cbrt(t):(24389/27*t+16)/116;const fx=f(X[0]/D65[0]),fy=f(X[1]/D65[1]),fz=f(X[2]/D65[2]);return[116*fy-16,500*(fx-fy),200*(fy-fz)]}
+function measure(raw){
+  const o=OBJ[st.sel],X0=o.X,X1=raw[st.sel],Wi=W(),D=curD();
+  const c0=fwd(X0,vc(D65,st.La,20,'avg',D)),c1=fwd(X1,vc(Wi,st.La,20,'avg',D));
+  const s=v=>v[0]+v[1]+v[2],xy0=[X0[0]/s(X0),X0[1]/s(X0)],xy1=[X1[0]/s(X1),X1[1]/s(X1)];
+  const L0=lab(X0),L1=lab(X1);
+  const dh=(a,b)=>{let d=Math.abs(a-b)%360;return d>180?360-d:d};
+  const chg=(d,th,u='')=>`<span class="chg ${d>th?'big':'small'}">Δ ${fmt(d,d<10?1:0)}${u}</span>`;
+  $('thIll').textContent='Pod světlem: '+ILL[st.ill][0].split(' · ')[0].toLowerCase();
+  const hLab=(a,b)=>{let h=Math.atan2(b,a)*180/Math.PI;return h<0?h+360:h};
+  $('meas').innerHTML=`
+   <tr><td>Předmět</td><td><span class="sw2" style="background:${xyz2css(X0)}"></span> ${o.n}</td><td><span class="sw2" style="background:${xyz2css(X1)}"></span> co přijde do oka</td></tr>
+   <tr><td>Chromatičnost x, y <span class="note">(přístroj)</span></td><td class="n">${fmt(xy0[0],3)}; ${fmt(xy0[1],3)}</td><td class="n">${fmt(xy1[0],3)}; ${fmt(xy1[1],3)}${chg(Math.hypot(xy1[0]-xy0[0],xy1[1]-xy0[1])*1000,15,' ‰')}</td></tr>
+   <tr><td>Lab a*, b* <span class="note">(bílá D65)</span></td><td class="n">${fmt(L0[1])}; ${fmt(L0[2])}</td><td class="n">${fmt(L1[1])}; ${fmt(L1[2])}${chg(Math.hypot(L1[1]-L0[1],L1[2]-L0[2]),5)}</td></tr>
+   <tr><td>Lab odstín h°</td><td class="n">${Math.hypot(L0[1],L0[2])<3?'—':fmt(hLab(L0[1],L0[2]),0)+'°'}</td><td class="n">${fmt(hLab(L1[1],L1[2]),0)}°${Math.hypot(L0[1],L0[2])<3?'<span class="chg big">šedá zbarvená</span>':chg(dh(hLab(L1[1],L1[2]),hLab(L0[1],L0[2])),8,'°')}</td></tr>
+   <tr><td><strong>CIECAM02 světlost J</strong></td><td class="n">${fmt(c0.J)}</td><td class="n">${fmt(c1.J)}${chg(Math.abs(c1.J-c0.J),3)}</td></tr>
+   <tr><td><strong>CIECAM02 chroma C</strong></td><td class="n">${fmt(c0.C)}</td><td class="n">${fmt(c1.C)}${chg(Math.abs(c1.C-c0.C),5)}</td></tr>
+   <tr><td><strong>CIECAM02 odstín h°</strong></td><td class="n">${c0.C<4?'— (šedá)':fmt(c0.h,0)+'°'}</td><td class="n">${c0.C<4?(c1.C<6?'— (pořád šedá)':fmt(c1.h,0)+'° (lehký nádech)'):fmt(c1.h,0)+'°'+chg(dh(c1.h,c0.h),8,'°')}</td></tr>`;
+}
+ILL.forEach(([n,x,y],i)=>{const b=document.createElement('button');b.type='button';b.innerHTML=`<i style="background:${xyz2css(xyY(x,y,85))}"></i>${n}`;b.addEventListener('click',()=>{st.ill=i;scene()});$('illums').appendChild(b)});
+$('D').addEventListener('input',e=>{st.D=+e.target.value;scene()});
+$('Dauto').addEventListener('change',e=>{st.auto=e.target.checked;if(!st.auto&&st.D==null)st.D=autoD();scene()});
+$('enter').addEventListener('click',()=>{const target=st.auto?autoD():st.D;if(matchMedia('(prefers-reduced-motion: reduce)').matches){st.anim=null;scene();return}
+  const t0=performance.now(),dur=3500;const step=t=>{const p=Math.min(1,(t-t0)/dur);st.anim=target*(1-Math.exp(-4*p))/(1-Math.exp(-4));scene();if(p<1)requestAnimationFrame(step);else{st.anim=null;scene()}};st.anim=0;requestAnimationFrame(step)});
+
+/* ---- pokus 2: okolí ---- */
+const RAMP=[2,4,7,11,16,23,32,44,60,80,100];
+function surround(){
+  const s=st.surr,vA=vc(D65,100,20,'avg',1),vX=vc(D65,100,20,s,1);
+  const Js=RAMP.map(Y=>fwd([D65[0]*Y/100,Y,D65[2]*Y/100],vA).J),Jx=RAMP.map(Y=>fwd([D65[0]*Y/100,Y,D65[2]*Y/100],vX).J);
+  const Yc=Js.map(J=>inv(J,0,0,vX)[1]);
+  const box=(id,Ys,Js2)=>{$(id).innerHTML=Ys.map((Y,i)=>{const g=Math.round(gam(Math.max(0,Math.min(1,Y/100)))*255);return`<i style="background:rgb(${g},${g},${g});color:${Y>25?'#111':'#ddd'}">${Math.round(Js2[i])}</i>`}).join('')};
+  box('r1',RAMP,Js);box('r2',RAMP,Jx);box('r3',Yc,Js);
+  const bg=s==='dark'?'#000':s==='dim'?'#2a2a2a':'#8a8a8a';$('r2').style.background=$('r3').style.background=bg;
+  const nm=SURR[s].name;$('l2').textContent=`Totéž v ${nm==='průměrné'?'průměrném':nm==='tlumené'?'tlumeném':'tmavém'} okolí`;$('l3').textContent=`Upraveno, aby v ${nm==='průměrné'?'průměrném':nm==='tlumené'?'tlumeném':'tmavém'} okolí vypadal stejně`;
+  $('lab1').textContent='J = světlost';$('lab2').textContent=s==='avg'?'':'tmavé tóny vypadají světlejší';$('lab3').textContent=s==='avg'?'':'stejné J jako nahoře';
+  const sl=(ys)=>{const a=Math.log(ys[2]),b=Math.log(ys[8]);return b-a};const ratio=sl(Yc)/sl(RAMP);
+  $('gammaNote').innerHTML=s==='avg'?'V průměrném okolí není potřeba nic upravovat.':`Aby obraz v ${s==='dark'?'tmavém':'tlumeném'} okolí působil stejně, musí mít podle modelu zhruba <strong>${fmt(ratio,2)}× vyšší gamu</strong>. Proto se pro monitor v kanceláři používá gama asi 2,2 (sRGB), pro televizi v obýváku 2,4 (BT.1886) a pro kino 2,6 (DCI).`;
+  [...$('surrBtns').children].forEach(b=>b.classList.toggle('on',b.dataset.s===s));
+}
+[['avg','Průměrné okolí · kancelář'],['dim','Tlumené · obývák s TV'],['dark','Tmavé · kino']].forEach(([k,n])=>{const b=document.createElement('button');b.type='button';b.dataset.s=k;b.textContent=n;b.addEventListener('click',()=>{st.surr=k;surround()});$('surrBtns').appendChild(b)});
+
+/* ---- pokus 3: Hunt, Stevens ---- */
+const LANAMES=[[.5,'měsíční noc'],[5,'šero, svítání'],[30,'večer v pokoji'],[150,'osvětlená kancelář'],[1000,'zatažená obloha venku'],[1e9,'slunečný den']];
+function chart(id,series,ymax,La){
+  const c=$(id),dpr=window.devicePixelRatio||1,w=c.clientWidth;if(!w)return;const h=Math.round(w*.62);c.style.height=h+'px';c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  const ctx=c.getContext('2d'),Wd=c.width,H=c.height,pl=36*dpr,pr=8*dpr,pt=8*dpr,pb=24*dpr;
+  const X=lg=>pl+(lg+1)/5*(Wd-pl-pr),Yp=v=>H-pb-v/ymax*(H-pt-pb);
+  ctx.fillStyle=css('--plot');ctx.fillRect(0,0,Wd,H);ctx.strokeStyle=css('--grid');ctx.fillStyle=css('--muted');ctx.lineWidth=1;ctx.font=`${10*dpr}px "IBM Plex Mono",monospace`;
+  for(let lg=-1;lg<=4;lg++){ctx.beginPath();ctx.moveTo(X(lg),pt);ctx.lineTo(X(lg),H-pb);ctx.stroke();ctx.textAlign='center';ctx.fillText(lg<0?'0,1':String(10**lg),X(lg),H-7*dpr)}
+  const stp=ymax>150?100:20;for(let v=0;v<=ymax;v+=stp){ctx.beginPath();ctx.moveTo(pl,Yp(v));ctx.lineTo(Wd-pr,Yp(v));ctx.stroke();ctx.textAlign='right';ctx.fillText(v,pl-5*dpr,Yp(v)+3*dpr)}
+  series.forEach(([col,f])=>{ctx.strokeStyle=col;ctx.lineWidth=2.5*dpr;ctx.beginPath();for(let lg=-1;lg<=4.001;lg+=.05){const v=f(10**lg);lg===-1?ctx.moveTo(X(lg),Yp(v)):ctx.lineTo(X(lg),Yp(v))}ctx.stroke();
+    ctx.fillStyle=col;ctx.beginPath();ctx.arc(X(Math.log10(La)),Yp(f(La)),5*dpr,0,7);ctx.fill()});
+  ctx.strokeStyle=css('--fg');ctx.setLineDash([4*dpr,4*dpr]);ctx.beginPath();ctx.moveTo(X(Math.log10(La)),pt);ctx.lineTo(X(Math.log10(La)),H-pb);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle=css('--muted');ctx.textAlign='right';ctx.fillText('cd/m²',Wd-pr,pt+10*dpr);
+}
+function hunt(){
+  const La=10**(+$('La').value);$('La-o').textContent=La<1?fmt(La,1):Math.round(La);
+  $('laName').innerHTML=`L<sub>A</sub> ≈ ${La<1?fmt(La,1):Math.round(La)} cd/m², odpovídá to zhruba prostředí: <strong>${LANAMES.find(([m])=>La<m)[1]}</strong>.`;
+  const at=(o,f)=>L=>f(fwd(o.X,vc(D65,L,20,'avg',1)));
+  chart('chM',[[css('--c1'),at(OBJ[3],c=>c.M)],[css('--c2'),at(OBJ[6],c=>c.M)],[css('--c3'),at(OBJ[5],c=>c.M)]],120,La);
+  chart('chQ',[[css('--fg'),at(OBJ[0],c=>c.Q)],[css('--muted'),at(OBJ[1],c=>c.Q)],[css('--bad'),at(OBJ[2],c=>c.Q)]],650,La);
+}
+$('La').addEventListener('input',hunt);
+
+function all(){scene();surround();hunt()}
+let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(hunt,150)});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',hunt);
+new MutationObserver(hunt).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+all();
+</script>
+</body></html>

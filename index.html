@@ -26,6 +26,7 @@ header p{margin:0;color:var(--muted);max-width:52ch}
 .hsv{background:linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
 .cie{background:radial-gradient(circle at 35% 70%,#fff 0 8%,transparent 40%),conic-gradient(from 200deg at 40% 65%,#2040ff,#00c8ff,#00e070,#c8ff00,#ffb000,#ff3000,#c000c0,#2040ff)}
 .lab{background:linear-gradient(90deg,#c48a6a 0 50%,#c98f6b 50% 100%)}
+.cam{background:linear-gradient(90deg,#f2c38a 0 50%,#e9edf2 50% 100%)}
 .ycbcr{background:linear-gradient(90deg,#000,#fff 50%,transparent 50%),linear-gradient(135deg,#00b386,#6a5acd 50%,#ff6a3d);background-blend-mode:normal}
 .body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:6px;flex:1}
 .body h2{font-size:1.15rem;margin:0}
@@ -79,6 +80,16 @@ footer{margin-top:48px;color:var(--muted);font-size:.85rem}
         <div class="body">
           <h2>CIE Lab a ΔE</h2>
           <p>Prostor Lab a barevné rozdíly ΔE76, ΔE94 a ΔE2000, srovnání vzorců a test oka.</p>
+          <span class="go">Otevřít →</span>
+        </div>
+      </a>
+    </li>
+    <li>
+      <a class="card" href="ciecam02.html">
+        <div class="swatch cam" aria-hidden="true"></div>
+        <div class="body">
+          <h2>CIECAM02 a barevná stálost</h2>
+          <p>Jak vnímáme barvy pod různým světlem, vliv okolí na kontrast a efekty Hunta a Stevense.</p>
           <span class="go">Otevřít →</span>
         </div>
       </a>
