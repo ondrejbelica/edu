@@ -1,10 +1,69 @@
-<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Výukové materiály</title>
-<style>body{font:16px/1.6 system-ui,sans-serif;max-width:680px;margin:40px auto;padding:0 16px;color:#1b1b1b;background:#ececec}h1{font-size:2rem;margin:0 0 4px}a{color:#2457c5}li{margin:8px 0}</style></head><body>
-<h1>Výukové materiály</h1>
-<p>Interaktivní aplikace pro studenty.</p>
-<ul>
-<li><a href="hsv-hsl.html">HSV vs HSL</a> – rozdíly mezi barevnými modely HSV a HSL</li>
-<li><a href="ycbcr.html">YCbCr laboratoř</a> – jas a chroma, rovina Cb–Cr, podvzorkování 4:2:2 / 4:2:0</li>
-</ul>
-</body></html>
+<meta name="description" content="Interaktivní aplikace pro studenty kamery a obrazu.">
+<style>
+:root{
+  --bg:#f3f2ef;--card:#ffffff;--text:#1b1b1b;--muted:#5f5f5f;--line:#dedbd4;--accent:#2457c5;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#121212;--card:#1d1d1d;--text:#ececec;--muted:#a3a3a3;--line:#2e2e2e;--accent:#7ea2ff}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:860px;margin:0 auto;padding:56px 16px 64px}
+header{margin-bottom:36px}
+.eyebrow{font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+h1{font-size:clamp(1.9rem,5vw,2.6rem);line-height:1.15;margin:0 0 10px}
+header p{margin:0;color:var(--muted);max-width:52ch}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;list-style:none;padding:0;margin:0}
+.card{display:flex;flex-direction:column;height:100%;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;color:inherit;text-decoration:none;transition:transform .15s,border-color .15s}
+.card:hover,.card:focus-visible{transform:translateY(-2px);border-color:var(--accent);outline:none}
+.swatch{height:96px}
+.hsv{background:linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
+.ycbcr{background:linear-gradient(90deg,#000,#fff 50%,transparent 50%),linear-gradient(135deg,#00b386,#6a5acd 50%,#ff6a3d);background-blend-mode:normal}
+.body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:6px;flex:1}
+.body h2{font-size:1.15rem;margin:0}
+.body p{margin:0;color:var(--muted);font-size:.95rem}
+.go{margin-top:auto;padding-top:10px;color:var(--accent);font-weight:600;font-size:.92rem}
+footer{margin-top:48px;color:var(--muted);font-size:.85rem}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="eyebrow">Kamera · Obraz · Barva</p>
+    <h1>Výukové materiály</h1>
+    <p>Interaktivní aplikace pro studenty. Otevřete libovolnou kartu a vyzkoušejte si principy na vlastní oči.</p>
+  </header>
+
+  <ul class="grid">
+    <li>
+      <a class="card" href="hsv-hsl.html">
+        <div class="swatch hsv" aria-hidden="true"></div>
+        <div class="body">
+          <h2>HSV vs HSL</h2>
+          <p>Rozdíly mezi barevnými modely HSV a HSL – odstín, sytost, jas a světlost.</p>
+          <span class="go">Otevřít →</span>
+        </div>
+      </a>
+    </li>
+    <li>
+      <a class="card" href="ycbcr.html">
+        <div class="swatch ycbcr" aria-hidden="true"></div>
+        <div class="body">
+          <h2>YCbCr laboratoř</h2>
+          <p>Jas a chroma, rovina Cb–Cr a podvzorkování 4:2:2 / 4:2:0.</p>
+          <span class="go">Otevřít →</span>
+        </div>
+      </a>
+    </li>
+  </ul>
+
+  <footer>Ondřej Belica</footer>
+</main>
+</body>
+</html>
