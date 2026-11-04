@@ -1,0 +1,319 @@
+<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CIE XYZ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: neutrální šedá jako v gradingové místnosti; nahoře velký diagram chromatičnosti s panelem hodnot, pod ním křivky citlivosti a vysvětlení */
+:root{
+  --bg:#ececec; --panel:#f8f8f8; --fg:#1b1b1b; --muted:#5e5e5e; --line:#cfcfcf; --plot:#d9d9d9; --grid:#c2c2c2;
+  --cx:#c4392b; --cy:#2c8a3c; --cz:#2457c5; --g1:#1b1b1b; --g2:#9a3fb0; --g3:#b46a00; --ok:#2c8a3c; --bad:#b4471f;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1c1c;--panel:#262626;--fg:#ececec;--muted:#a6a6a6;--line:#3c3c3c;--plot:#141414;--grid:#333;--cx:#ff7a6b;--cy:#6fd07f;--cz:#7fa2ff;--g1:#f2f2f2;--g2:#e08cf5;--g3:#ffb54a;--ok:#6fd07f;--bad:#ff9a6e;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1c1c1c;--panel:#262626;--fg:#ececec;--muted:#a6a6a6;--line:#3c3c3c;--plot:#141414;--grid:#333;--cx:#ff7a6b;--cy:#6fd07f;--cz:#7fa2ff;--g1:#f2f2f2;--g2:#e08cf5;--g3:#ffb54a;--ok:#6fd07f;--bad:#ff9a6e;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+.wrap{max-width:1080px;margin:0 auto;display:grid;gap:32px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(2rem,6vw,3.4rem);font-weight:700;letter-spacing:-.02em}
+h2{font-size:1.45rem;font-weight:700} h3{font-size:1.1rem;font-weight:700}
+p{margin:0;max-width:65ch}
+.lead{color:var(--muted);font-size:1.05rem;margin-top:10px}
+.eyebrow{font:500 .75rem var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+header{display:grid;gap:6px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:14px;min-width:0}
+.main{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:820px){.main{grid-template-columns:1fr}}
+canvas{display:block;width:100%;max-width:100%;border-radius:8px;touch-action:none}
+#xy{cursor:crosshair}
+.side{display:grid;gap:16px}
+.sw{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+#swatch{width:88px;height:88px;border-radius:10px;border:1px solid var(--line);position:relative;overflow:hidden}
+#swatch.out::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent 0 8px,rgba(0,0,0,.25) 8px 10px)}
+.vals{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font:500 .92rem var(--mono);font-variant-numeric:tabular-nums}
+.vals b{font-weight:500;color:var(--muted)}
+.ctl{display:grid;grid-template-columns:6.5em 1fr 4.2em;gap:10px;align-items:center;font-size:.9rem}
+.ctl output{font:500 .9rem var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--fg)}
+.badges{display:flex;flex-wrap:wrap;gap:8px}
+.badge{font:500 .8rem var(--mono);padding:5px 10px;border-radius:999px;border:1px solid var(--line);display:flex;gap:6px;align-items:center}
+.badge.in{color:var(--ok);border-color:var(--ok)} .badge.out{color:var(--bad);border-color:var(--bad)}
+.toggles{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:.9rem}
+.toggles label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.sw1{display:inline-block;width:18px;height:3px;border-radius:2px}
+.msg{font-size:.9rem;color:var(--bad);min-height:1.4em}
+button{font:500 .88rem var(--body);padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+button:hover{border-color:var(--fg)}
+button:focus-visible,input:focus-visible,canvas:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.note{font-size:.92rem;color:var(--muted)} .note strong{color:var(--fg)}
+.sub{border-top:1px solid var(--line);padding-top:14px;display:grid;gap:10px}
+.explain{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px}
+.explain .card{gap:8px}
+.explain p{font-size:.95rem}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font:500 .85rem var(--mono)}
+.legend span{display:flex;gap:6px;align-items:center}
+.tbl{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font:500 .75rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+code{font-family:var(--mono);font-size:.92em}
+.formula{font:500 1rem var(--mono);background:var(--bg);border-radius:8px;padding:10px 14px;overflow-x:auto;white-space:nowrap}
+</style></head><body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Barevné prostory · interaktivní učebnice</div>
+    <h1>CIE XYZ</h1>
+    <p class="lead">V roce 1931 se Mezinárodní komise pro osvětlení (CIE) dohodla, jak čísly popsat <strong>každou barvu, kterou lidské oko vidí</strong>. Z toho vznikl prostor XYZ a slavný „podkovovitý“ diagram. Na diagramu klikej nebo táhni, posouvej vlnovou délku a míchej barvy.</p>
+  </header>
+
+  <section class="main">
+    <div class="card">
+      <div>
+        <div class="eyebrow">Diagram chromatičnosti xy</div>
+        <h2>Všechny barvy, které vidíme</h2>
+      </div>
+      <canvas id="xy" tabindex="0" aria-label="Diagram chromatičnosti CIE 1931, klikni pro výběr barvy"></canvas>
+      <div class="toggles">
+        <label><input type="checkbox" id="t-srgb" checked> <i class="sw1" style="background:var(--g1)"></i>sRGB / Rec.709</label>
+        <label><input type="checkbox" id="t-p3"> <i class="sw1" style="background:var(--g2)"></i>DCI-P3</label>
+        <label><input type="checkbox" id="t-2020"> <i class="sw1" style="background:var(--g3)"></i>Rec.2020</label>
+      </div>
+      <p class="note">Barvy uvnitř podkovy jsou jen <strong>přibližné</strong>. Monitor umí ukázat pouze barvy uvnitř svého trojúhelníku, ty venku vykreslí jako nejbližší, kterou zvládne.</p>
+    </div>
+
+    <div class="side">
+      <div class="card">
+        <div class="eyebrow" id="sel-label">Vybraná barva A</div>
+        <div class="sw">
+          <div id="swatch"></div>
+          <div class="vals">
+            <b>x, y</b><span id="v-xy"></span>
+            <b>X</b><span id="v-X"></span>
+            <b>Y</b><span id="v-Y"></span>
+            <b>Z</b><span id="v-Z"></span>
+            <b>sRGB</b><span id="v-rgb"></span>
+          </div>
+        </div>
+        <div class="ctl"><label for="lum">Jas Y</label><input type="range" id="lum" min="1" max="100" value="60"><output id="lum-o"></output></div>
+        <div class="badges" id="badges"></div>
+        <div class="msg" id="msg" role="status"></div>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">Spektrální barva</div>
+        <div class="ctl"><label for="wl">Vlnová délka</label><input type="range" id="wl" min="380" max="700" value="520"><output id="wl-o"></output></div>
+        <div class="vals" id="wl-vals"></div>
+        <div><button type="button" id="use-wl">Použít jako barvu A</button></div>
+        <p class="note">Čistá světla jedné vlnové délky (laser, duha) leží přímo <strong>na okraji podkovy</strong>. Sytější barvy neexistují.</p>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">Míchání světel</div>
+        <label class="toggles"><span><input type="checkbox" id="mix"> Míchat barvu A s barvou B</span></label>
+        <div class="ctl" id="mix-row" hidden><label for="ratio">Podíl B</label><input type="range" id="ratio" min="0" max="100" value="50"><output id="ratio-o"></output></div>
+        <p class="note">Smícháním dvou světel vznikne barva <strong>vždy na úsečce</strong> mezi nimi. Proto monitor se třemi světly (R, G, B) umí jen barvy uvnitř svého trojúhelníku. Bod B posuneš tažením v diagramu.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div>
+      <div class="eyebrow">Funkce barevného přizpůsobení CIE 1931 (2°)</div>
+      <h2>Jak „pozorovatel“ přepočítá spektrum na X, Y, Z</h2>
+    </div>
+    <div class="legend">
+      <span><i class="sw1" style="background:var(--cx)"></i>x̄(λ)</span>
+      <span><i class="sw1" style="background:var(--cy)"></i>ȳ(λ) = citlivost oka na jas</span>
+      <span><i class="sw1" style="background:var(--cz)"></i>z̄(λ)</span>
+    </div>
+    <canvas id="cmf" aria-label="Graf funkcí x̄, ȳ, z̄ podle vlnové délky"></canvas>
+    <p class="note">Svislá čára ukazuje zvolenou vlnovou délku. Každé světlo se rozloží na spektrum, každá vlnová délka se vynásobí těmito třemi křivkami a výsledky se sečtou. Tak vzniknou tři čísla X, Y a Z.</p>
+  </section>
+
+  <section class="explain">
+    <div class="card">
+      <div class="eyebrow">1 · Problém</div>
+      <h3>Proč nestačilo RGB</h3>
+      <p>Pokusné osoby při pokusech ve 20. letech míchaly tři barevná světla tak, aby se shodovala s barvou ze spektra. Některé barvy (třeba sytá modrozelená) ale šlo dosáhnout jen tak, že se jedno světlo přidalo <em>na druhou stranu</em>. Vyšla <strong>záporná čísla</strong>.</p>
+    </div>
+    <div class="card">
+      <div class="eyebrow">2 · Řešení</div>
+      <h3>Pomyslné základní barvy</h3>
+      <p>CIE proto zvolila tři <strong>neexistující</strong> „barvy“ X, Y, Z, které leží mimo podkovu. Díky tomu jsou všechny skutečné barvy popsané jen kladnými čísly. Y bylo zvoleno tak, aby přesně odpovídalo <strong>jasu</strong>, jak ho vnímá oko.</p>
+    </div>
+    <div class="card">
+      <div class="eyebrow">3 · Zjednodušení</div>
+      <h3>Z XYZ na xy</h3>
+      <p>Tři čísla se špatně kreslí. Proto se jas oddělí a zbylé dvě hodnoty <code>x</code> a <code>y</code> říkají jen „jaká je to barva“ bez ohledu na jas. To je <strong>chromatičnost</strong>, souřadnice v diagramu.</p>
+    </div>
+    <div class="card">
+      <div class="eyebrow">4 · Praxe</div>
+      <h3>K čemu to je</h3>
+      <p>XYZ je společný „překladový jazyk“. Kamera, monitor, projektor i tiskárna mají vlastní RGB, ale každé z nich jde převést do XYZ. Tak se zajistí, že barva vypadá stejně na různých zařízeních. Trojúhelníky v diagramu jsou <strong>gamuty</strong> běžných standardů.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="eyebrow">Vzorce</div>
+    <div class="formula">x = X / (X + Y + Z) &nbsp;&nbsp; y = Y / (X + Y + Z) &nbsp;&nbsp; z = 1 − x − y</div>
+    <div class="formula">X = x · Y / y &nbsp;&nbsp; Z = (1 − x − y) · Y / y</div>
+  </section>
+
+  <section class="tbl">
+    <table>
+      <thead><tr><th>Místo v diagramu</th><th>Co znamená</th></tr></thead>
+      <tbody>
+        <tr><td>Oblouk podkovy</td><td>spektrální barvy 380–700 nm, nejsytější barvy, jaké existují</td></tr>
+        <tr><td>Rovná spodní hrana</td><td>purpurová přímka: směsi fialové a červené, které ve spektru nejsou</td></tr>
+        <tr><td>Bod D65 (x 0,3127; y 0,3290)</td><td>bílá denního světla, bílý bod sRGB, Rec.709 i Rec.2020</td></tr>
+        <tr><td>Mimo podkovu</td><td>čísla bez skutečné barvy, tam leží i pomyslné základní barvy X, Y, Z</td></tr>
+        <tr><td>Trojúhelník sRGB / Rec.709</td><td>běžný monitor, web, HD televize</td></tr>
+        <tr><td>Trojúhelník DCI-P3</td><td>digitální kino, novější telefony a monitory</td></tr>
+        <tr><td>Trojúhelník Rec.2020</td><td>UHD a HDR, většina zařízení ho zatím nepokryje celý</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <p class="note">Křivky jsou spočítané analytickou aproximací funkcí CIE 1931 (Wyman, Sloan a Shirley, 2013), která se od tabulkových hodnot liší jen nepatrně. Pro výuku je přesnost víc než dostatečná.</p>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* CIE 1931 2° – analytická aproximace (Wyman, Sloan, Shirley 2013) */
+const g=(l,m,a,b)=>{const t=(l-m)/(l<m?a:b);return Math.exp(-.5*t*t)};
+function cmf(l){return[
+  1.056*g(l,599.8,37.9,31.0)+0.362*g(l,442.0,16.0,26.7)-0.065*g(l,501.1,20.4,26.2),
+  0.821*g(l,568.8,46.9,40.5)+0.286*g(l,530.9,16.3,31.1),
+  1.217*g(l,437.0,11.8,36.0)+0.681*g(l,459.0,26.0,13.8)]}
+/* spektrální křivka – tabulka CIE 1931 po 5 nm (380–700 nm) */
+const LT=[.1741,.0050,.1740,.0050,.1738,.0049,.1736,.0049,.1733,.0048,.1730,.0048,.1726,.0048,.1721,.0048,.1714,.0051,.1703,.0058,.1689,.0069,.1669,.0086,.1644,.0109,.1611,.0138,.1566,.0177,.1510,.0227,.1440,.0297,.1355,.0399,.1241,.0578,.1096,.0868,.0913,.1327,.0687,.2007,.0454,.2950,.0235,.4127,.0082,.5384,.0039,.6548,.0139,.7502,.0389,.8120,.0743,.8338,.1142,.8262,.1547,.8059,.1929,.7816,.2296,.7543,.2658,.7243,.3016,.6923,.3373,.6589,.3731,.6245,.4087,.5896,.4441,.5547,.4788,.5202,.5125,.4866,.5448,.4544,.5752,.4242,.6029,.3965,.6270,.3725,.6482,.3514,.6658,.3340,.6801,.3197,.6915,.3083,.7006,.2993,.7079,.2920,.7140,.2859,.7190,.2809,.7230,.2770,.7260,.2740,.7283,.2717,.7300,.2700,.7311,.2689,.7320,.2680,.7327,.2673,.7334,.2666,.7340,.2660,.7344,.2656,.7346,.2654,.7347,.2653];
+function xyOf(l){l=Math.max(380,Math.min(700,l));const f=(l-380)/5,i=Math.min(63,Math.floor(f)),t=f-i;return[LT[2*i]*(1-t)+LT[2*i+2]*t,LT[2*i+1]*(1-t)+LT[2*i+3]*t]}
+const LOCUS=[];for(let l=380;l<=700;l++)LOCUS.push(xyOf(l));
+
+const M=[[3.2406,-1.5372,-0.4986],[-0.9689,1.8758,0.0415],[0.0557,-0.2040,1.0570]];
+const lin=(X,Y,Z)=>M.map(r=>r[0]*X+r[1]*Y+r[2]*Z);
+const gam=c=>c<=0.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-.055;
+const clamp01=v=>Math.max(0,Math.min(1,v));
+const xyY2XYZ=(x,y,Y)=>y<=0?[0,0,0]:[x*Y/y,Y,(1-x-y)*Y/y];
+function displayRGB(x,y){let c=lin(...xyY2XYZ(x,y,1)).map(v=>Math.max(0,v));const m=Math.max(...c)||1;return c.map(v=>Math.round(gam(v/m)*255))}
+
+const GAMUTS={srgb:[[.64,.33],[.30,.60],[.15,.06]],p3:[[.680,.320],[.265,.690],[.150,.060]],r2020:[[.708,.292],[.170,.797],[.131,.046]]};
+const D65=[.3127,.3290];
+function inTri(p,t){const [a,b,c]=t;const s=(p1,p2,p3)=>(p1[0]-p3[0])*(p2[1]-p3[1])-(p2[0]-p3[0])*(p1[1]-p3[1]);const d1=s(p,a,b),d2=s(p,b,c),d3=s(p,c,a);return !((d1<0||d2<0||d3<0)&&(d1>0||d2>0||d3>0))}
+function inPoly(p,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const[xi,yi]=poly[i],[xj,yj]=poly[j];if(((yi>p[1])!==(yj>p[1]))&&(p[0]<(xj-xi)*(p[1]-yi)/(yj-yi)+xi))inside=!inside}return inside}
+
+const st={A:[.30,.60],B:[.64,.33],Y:.6,wl:520,mix:false,t:.5,show:{srgb:true,p3:false,r2020:false}};
+
+/* ---- diagram ---- */
+const cv=$('xy');let view=null,bg=null;
+const XR=[0,.8],YR=[0,.9];
+function setup(){
+  const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=Math.round(w*1.06);
+  cv.style.height=h+'px';cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
+  const pl=38*dpr,pb=30*dpr,pt=10*dpr,pr=10*dpr;
+  const sc=Math.min((cv.width-pl-pr)/(XR[1]-XR[0]),(cv.height-pt-pb)/(YR[1]-YR[0]));
+  view={dpr,pl,pb,pt,pr,sc,ox:pl,oy:cv.height-pb};
+  buildBg();
+}
+const toPx=(x,y)=>[view.ox+x*view.sc,view.oy-y*view.sc];
+const toXY=(px,py)=>[(px-view.ox)/view.sc,(view.oy-py)/view.sc];
+function buildBg(){
+  const W=cv.width,H=cv.height;bg=document.createElement('canvas');bg.width=W;bg.height=H;
+  const ctx=bg.getContext('2d'),img=ctx.createImageData(W,H),d=img.data;
+  const poly=LOCUS.map(p=>toPx(p[0],p[1]));
+  for(let py=0;py<H;py++){
+    const xs=[];for(let i=0,j=poly.length-1;i<poly.length;j=i++){const[x1,y1]=poly[j],[x2,y2]=poly[i];if((y1>py)!==(y2>py))xs.push(x1+(py-y1)*(x2-x1)/(y2-y1))}
+    xs.sort((a,b)=>a-b);
+    for(let k=0;k+1<xs.length;k+=2){for(let px=Math.max(0,Math.ceil(xs[k]));px<=Math.min(W-1,xs[k+1]);px++){const[x,y]=toXY(px,py);const c=displayRGB(x,y);const o=(py*W+px)*4;d[o]=c[0];d[o+1]=c[1];d[o+2]=c[2];d[o+3]=255}}
+  }
+  ctx.putImageData(img,0,0);
+}
+function draw(){
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height,dpr=view.dpr;
+  ctx.fillStyle=css('--plot');ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle=css('--grid');ctx.lineWidth=1;ctx.fillStyle=css('--muted');ctx.font=`${11*dpr}px "IBM Plex Mono",monospace`;
+  for(let v=0;v<=.8001;v+=.1){const[px]=toPx(v,0);ctx.beginPath();ctx.moveTo(px,view.pt);ctx.lineTo(px,view.oy);ctx.stroke();ctx.textAlign='center';ctx.fillText(v.toFixed(1),px,view.oy+16*dpr)}
+  for(let v=0;v<=.9001;v+=.1){const[,py]=toPx(0,v);ctx.beginPath();ctx.moveTo(view.ox,py);ctx.lineTo(W-view.pr,py);ctx.stroke();ctx.textAlign='right';ctx.fillText(v.toFixed(1),view.ox-6*dpr,py+4*dpr)}
+  ctx.textAlign='left';ctx.fillText('x',W-view.pr-10*dpr,view.oy-6*dpr);ctx.fillText('y',view.ox+6*dpr,view.pt+12*dpr);
+  ctx.drawImage(bg,0,0);
+  ctx.strokeStyle=css('--fg');ctx.lineWidth=1.5*dpr;ctx.beginPath();LOCUS.forEach((p,i)=>{const[a,b]=toPx(...p);i?ctx.lineTo(a,b):ctx.moveTo(a,b)});ctx.closePath();ctx.stroke();
+  ctx.fillStyle=css('--fg');ctx.font=`${10*dpr}px "IBM Plex Mono",monospace`;
+  [460,480,490,500,510,520,540,560,580,600,620,700].forEach(l=>{const[x,y]=xyOf(l);const[cx,cy]=[.3127,.33];let dx=x-cx,dy=y-cy;const n=Math.hypot(dx,dy);dx/=n;dy/=n;const[a,b]=toPx(x,y);ctx.beginPath();ctx.moveTo(a,b);ctx.lineTo(a+dx*6*dpr,b-dy*6*dpr);ctx.stroke();ctx.textAlign=dx<-.2?'right':dx>.2?'left':'center';ctx.fillText(l,a+dx*10*dpr,b-dy*12*dpr+3*dpr)});
+  const gs={srgb:'--g1',p3:'--g2',r2020:'--g3'};
+  for(const k in GAMUTS){if(!st.show[k])continue;ctx.strokeStyle=css(gs[k]);ctx.lineWidth=2*dpr;ctx.beginPath();GAMUTS[k].forEach((p,i)=>{const[a,b]=toPx(...p);i?ctx.lineTo(a,b):ctx.moveTo(a,b)});ctx.closePath();ctx.stroke()}
+  const[wx,wy]=toPx(...D65);ctx.fillStyle='#fff';ctx.strokeStyle='#000';ctx.lineWidth=1.5*dpr;ctx.beginPath();ctx.arc(wx,wy,4*dpr,0,7);ctx.fill();ctx.stroke();ctx.fillStyle=css('--fg');ctx.textAlign='left';ctx.fillText('D65',wx+7*dpr,wy+12*dpr);
+  const[sx,sy]=toPx(...xyOf(st.wl));ctx.strokeStyle=css('--fg');ctx.setLineDash([3*dpr,3*dpr]);ctx.beginPath();ctx.arc(sx,sy,8*dpr,0,7);ctx.stroke();ctx.setLineDash([]);
+  const pt=(p,label)=>{const[a,b]=toPx(...p);ctx.lineWidth=3*dpr;ctx.strokeStyle='#000';ctx.beginPath();ctx.arc(a,b,9*dpr,0,7);ctx.stroke();ctx.lineWidth=1.5*dpr;ctx.strokeStyle='#fff';ctx.beginPath();ctx.arc(a,b,9*dpr,0,7);ctx.stroke();ctx.fillStyle=css('--fg');ctx.font=`600 ${12*dpr}px "IBM Plex Sans",sans-serif`;ctx.textAlign='left';ctx.fillText(label,a+12*dpr,b-8*dpr)};
+  if(st.mix){const[a1,b1]=toPx(...st.A),[a2,b2]=toPx(...st.B);ctx.strokeStyle=css('--fg');ctx.lineWidth=1.5*dpr;ctx.setLineDash([6*dpr,4*dpr]);ctx.beginPath();ctx.moveTo(a1,b1);ctx.lineTo(a2,b2);ctx.stroke();ctx.setLineDash([]);pt(st.B,'B');
+    const m=mixXY();const[mx,my]=toPx(...m);ctx.fillStyle=css('--fg');ctx.beginPath();ctx.arc(mx,my,5*dpr,0,7);ctx.fill();ctx.fillText('směs',mx+8*dpr,my+14*dpr)}
+  pt(st.A,'A');
+}
+function mixXY(){const a=xyY2XYZ(...st.A,1),b=xyY2XYZ(...st.B,1);const m=a.map((v,i)=>v*(1-st.t)+b[i]*st.t);const s=m[0]+m[1]+m[2];return[m[0]/s,m[1]/s]}
+
+/* ---- CMF graf ---- */
+const cc=$('cmf');let cview=null;
+function setupC(){const dpr=window.devicePixelRatio||1,w=cc.clientWidth,h=Math.max(200,Math.round(w*.38));cc.style.height=h+'px';cc.width=Math.round(w*dpr);cc.height=Math.round(h*dpr);cview={dpr,pl:34*dpr,pr:10*dpr,pt:10*dpr,pb:44*dpr}}
+function drawC(){
+  const ctx=cc.getContext('2d'),W=cc.width,H=cc.height,{dpr,pl,pr,pt,pb}=cview;
+  const X=l=>pl+(l-380)/(780-380)*(W-pl-pr),Yp=v=>H-pb-v/2*(H-pb-pt);
+  ctx.fillStyle=css('--panel');ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle=css('--grid');ctx.fillStyle=css('--muted');ctx.lineWidth=1;ctx.font=`${11*dpr}px "IBM Plex Mono",monospace`;
+  for(let v=0;v<=2;v+=.5){ctx.beginPath();ctx.moveTo(pl,Yp(v));ctx.lineTo(W-pr,Yp(v));ctx.stroke();ctx.textAlign='right';ctx.fillText(v.toFixed(1),pl-6*dpr,Yp(v)+4*dpr)}
+  for(let l=400;l<=780;l+=50){ctx.textAlign='center';ctx.fillText(l,X(l),H-6*dpr)}
+  ctx.textAlign='right';ctx.fillText('nm',W-pr,H-6*dpr);
+  const sh=10*dpr,sy=H-pb+6*dpr;for(let l=380;l<780;l++){const [x,y]=l<=700?xyOf(l):xyOf(700);const c=displayRGB(x,y);const k=Math.min(1,cmf(l)[1]*1.4+cmf(l)[2]*.5);ctx.fillStyle=`rgb(${c.map(v=>Math.round(v*k)).join(',')})`;ctx.fillRect(X(l),sy,Math.ceil(X(l+1)-X(l))+1,sh)}
+  [['--cx',0],['--cy',1],['--cz',2]].forEach(([col,i])=>{ctx.strokeStyle=css(col);ctx.lineWidth=2.5*dpr;ctx.beginPath();for(let l=380;l<=780;l+=2){const v=cmf(l)[i];l===380?ctx.moveTo(X(l),Yp(v)):ctx.lineTo(X(l),Yp(v))}ctx.stroke()});
+  ctx.strokeStyle=css('--fg');ctx.lineWidth=1.5*dpr;ctx.setLineDash([4*dpr,4*dpr]);ctx.beginPath();ctx.moveTo(X(st.wl),pt);ctx.lineTo(X(st.wl),H-pb);ctx.stroke();ctx.setLineDash([]);
+  const v=cmf(st.wl);[['--cx',0],['--cy',1],['--cz',2]].forEach(([col,i])=>{ctx.fillStyle=css(col);ctx.beginPath();ctx.arc(X(st.wl),Yp(v[i]),4.5*dpr,0,7);ctx.fill()});
+}
+
+/* ---- hodnoty ---- */
+const f3=v=>v.toFixed(3).replace('.',',');
+function update(){
+  const p=st.mix?mixXY():st.A,Y=st.Y;
+  const [X,,Z]=xyY2XYZ(p[0],p[1],Y);
+  const l=lin(X,Y,Z);const ok=l.every(v=>v>=-0.002&&v<=1.002);
+  const rgb=l.map(v=>Math.round(gam(clamp01(v))*255));
+  const real=inPoly(p,LOCUS);
+  $('sel-label').textContent=st.mix?'Výsledná směs A + B':'Vybraná barva A';
+  $('swatch').style.background=`rgb(${rgb.join(',')})`;$('swatch').classList.toggle('out',!ok);
+  $('v-xy').textContent=`${f3(p[0])}; ${f3(p[1])}`;
+  $('v-X').textContent=(X*100).toFixed(1).replace('.',',');$('v-Y').textContent=(Y*100).toFixed(1).replace('.',',');$('v-Z').textContent=(Z*100).toFixed(1).replace('.',',');
+  $('v-rgb').textContent=ok?rgb.join(', '):'mimo rozsah';
+  $('lum-o').textContent=Math.round(Y*100)+' %';
+  const names={srgb:'sRGB',p3:'DCI-P3',r2020:'Rec.2020'};
+  $('badges').innerHTML=Object.keys(GAMUTS).map(k=>{const i=inTri(p,GAMUTS[k]);return `<span class="badge ${i?'in':'out'}">${i?'✓':'✕'} ${names[k]}</span>`}).join('');
+  $('msg').textContent=!real?'Tento bod leží mimo podkovu – žádná skutečná barva takové souřadnice nemá.':(!ok&&inTri(p,GAMUTS.srgb)?'Při tomto jasu je barva pro sRGB monitor příliš jasná (některý kanál by musel být nad 100 %).':(!ok?'Tuto barvu sRGB monitor neumí – vzorek ukazuje jen přiblížení.':''));
+  const v=cmf(st.wl),q=xyOf(st.wl);
+  $('wl-o').textContent=st.wl+' nm';
+  $('wl-vals').innerHTML=`<b>x̄, ȳ, z̄</b><span>${f3(v[0])}; ${f3(v[1])}; ${f3(v[2])}</span><b>x, y</b><span>${f3(q[0])}; ${f3(q[1])}</span>`;
+  $('ratio-o').textContent=Math.round(st.t*100)+' %';
+  draw();drawC();
+}
+
+/* ---- ovládání ---- */
+let drag=null;
+function pick(e,start){const r=cv.getBoundingClientRect();const px=(e.clientX-r.left)*view.dpr,py=(e.clientY-r.top)*view.dpr;let p=toXY(px,py);p=[Math.max(0,Math.min(.8,p[0])),Math.max(.005,Math.min(.9,p[1]))];
+  if(start){drag='A';if(st.mix){const dA=Math.hypot(p[0]-st.A[0],p[1]-st.A[1]),dB=Math.hypot(p[0]-st.B[0],p[1]-st.B[1]);drag=dB<dA?'B':'A'}}
+  st[drag]=p;update()}
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);pick(e,true)});
+cv.addEventListener('pointermove',e=>{if(cv.hasPointerCapture(e.pointerId))pick(e,false)});
+cv.addEventListener('keydown',e=>{const m={ArrowLeft:[-.01,0],ArrowRight:[.01,0],ArrowUp:[0,.01],ArrowDown:[0,-.01]}[e.key];if(m){e.preventDefault();st.A=[st.A[0]+m[0],Math.max(.005,st.A[1]+m[1])];update()}});
+$('lum').addEventListener('input',e=>{st.Y=e.target.value/100;update()});
+$('wl').addEventListener('input',e=>{st.wl=+e.target.value;update()});
+$('use-wl').addEventListener('click',()=>{st.A=xyOf(st.wl);update()});
+$('mix').addEventListener('change',e=>{st.mix=e.target.checked;$('mix-row').hidden=!st.mix;update()});
+$('ratio').addEventListener('input',e=>{st.t=e.target.value/100;update()});
+[['t-srgb','srgb'],['t-p3','p3'],['t-2020','r2020']].forEach(([id,k])=>$(id).addEventListener('change',e=>{st.show[k]=e.target.checked;draw()}));
+let rt;function relayout(){setup();setupC();update()}
+window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(relayout,150)});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>update());
+new MutationObserver(()=>update()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+relayout();
+</script>
+</body></html>
