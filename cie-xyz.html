@@ -79,6 +79,20 @@ code{font-family:var(--mono);font-size:.92em}
 .strip2 .lbl{font:500 .8rem var(--mono);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:var(--muted)}
 .lbl2{font:500 .8rem var(--mono);margin-top:4px}
 .strip2 canvas{height:40px}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.step{display:grid;grid-template-columns:7.2em 1fr;gap:18px;padding:18px 0;border-top:1px solid var(--line)}
+.step:first-child{border-top:0;padding-top:4px}
+@media (max-width:640px){.step{grid-template-columns:1fr;gap:8px}}
+.yr{font:700 1.05rem var(--display);font-variant-numeric:tabular-nums;color:var(--muted)}
+.stepbody{display:grid;gap:12px;min-width:0}
+.colorim{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:20px;align-items:center;background:var(--bg);border-radius:12px;padding:16px}
+@media (max-width:640px){.colorim{grid-template-columns:1fr}}
+#field{aspect-ratio:1;max-width:260px;margin:0 auto;border-radius:50%}
+.cctl{display:grid;gap:10px;min-width:0}
+.match{font:600 .95rem var(--body);min-height:1.4em}
+.match.yes{color:var(--ok)}
+.rules{margin:0;padding-left:1.2em;display:grid;gap:6px;max-width:65ch;font-size:.95rem}
+#rg{max-width:560px}
 .formula{font:500 1rem var(--mono);background:var(--bg);border-radius:8px;padding:10px 14px;overflow-x:auto;white-space:nowrap}
 </style></head><body>
 <div class="wrap">
@@ -138,6 +152,70 @@ code{font-family:var(--mono);font-size:.92em}
     </div>
   </section>
 
+  <section class="card story" id="story">
+    <div>
+      <div class="eyebrow">Jak vzniklo XYZ</div>
+      <h2>Od pokusů s barevnými světly k diagramu</h2>
+    </div>
+    <ol class="steps">
+      <li class="step">
+        <div class="yr">1924</div>
+        <div class="stepbody">
+          <h3>Jak citlivé je oko na jas</h3>
+          <p>CIE nejdřív změřila a přijala křivku <strong>V(λ)</strong>, která říká, jak jasně oko vnímá stejně silné světlo různých vlnových délek. Nejcitlivější je na žlutozelenou kolem 555 nm. Tahle křivka se později stala přímo osou <strong>Y</strong>.</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="yr">1928–1931</div>
+        <div class="stepbody">
+          <h3>Pokus: dorovnej barvu třemi světly</h3>
+          <p>V Londýně dělali nezávisle pokusy W. D. Wright (10 pozorovatelů) a J. Guild (7 pozorovatelů). Pozorovatel se díval do přístroje na malé kruhové pole (zorný úhel 2°) rozdělené na dvě poloviny. V jedné svítilo čisté světlo jedné vlnové délky, ve druhé směs tří světel: <strong>červeného, zeleného a modrého</strong>. Otáčel knoflíky, dokud obě poloviny nevypadaly stejně. Zkus to sám:</p>
+          <div class="colorim">
+            <canvas id="field" aria-label="Rozdělené zorné pole kolorimetru"></canvas>
+            <div class="cctl">
+              <div class="ctl"><label for="wl2">Test λ</label><input type="range" id="wl2" min="445" max="680" value="500"><output id="wl2-o"></output></div>
+              <div class="ctl"><label for="kr">Červená</label><input type="range" id="kr" min="0" max="0.45" step="0.001" value="0.05"><output id="kr-o"></output></div>
+              <div class="ctl"><label for="kg">Zelená</label><input type="range" id="kg" min="0" max="0.45" step="0.001" value="0.1"><output id="kg-o"></output></div>
+              <div class="ctl"><label for="kb">Modrá</label><input type="range" id="kb" min="0" max="0.45" step="0.001" value="0.05"><output id="kb-o"></output></div>
+              <label class="toggles"><span><input type="checkbox" id="rneg"> Červenou přidat k <strong>testované</strong> polovině</span></label>
+              <div class="match" id="match" role="status"></div>
+              <div><button type="button" id="solve">Ukaž řešení</button></div>
+            </div>
+          </div>
+          <p class="note">Vlevo je testované spektrální světlo, vpravo směs. U mnoha vlnových délek (třeba 480–540 nm) shody <strong>nedosáhneš</strong>. Směs je vždy méně sytá. Pomůže jediný trik: přidat červenou k testovanému světlu, aby se „zředilo“. Matematicky je to <strong>záporné množství červené</strong>. (Na úplném fialovém konci spektra je stejně potřeba „ubrat“ i trochu zelené, proto posuvník začíná na 445 nm.)</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="yr">1931</div>
+        <div class="stepbody">
+          <h3>Výsledek pokusů: křivky r̄, ḡ, b̄</h3>
+          <p>Naměřená čísla pro všechny vlnové délky dala tři křivky. CIE je přepočítala na základní světla <strong>700 nm</strong> (červená), <strong>546,1 nm</strong> (zelená) a <strong>435,8 nm</strong> (modrá). Červená křivka ale v modrozelené oblasti klesá <strong>pod nulu</strong>. Se zápornými čísly se tehdy, kdy se počítalo ručně a na mechanických kalkulačkách, pracovalo velmi nepohodlně.</p>
+          <div class="legend">
+            <span><i class="sw1" style="background:var(--cx)"></i>r̄(λ)</span>
+            <span><i class="sw1" style="background:var(--cy)"></i>ḡ(λ)</span>
+            <span><i class="sw1" style="background:var(--cz)"></i>b̄(λ)</span>
+            <span><i class="sw1" style="background:var(--bad);opacity:.5;height:10px"></i>záporná oblast</span>
+          </div>
+          <canvas id="rgbcmf" aria-label="Graf křivek r̄, ḡ, b̄ se zápornou částí"></canvas>
+        </div>
+      </li>
+      <li class="step">
+        <div class="yr">září 1931</div>
+        <div class="stepbody">
+          <h3>Trik: nové, pomyslné základní barvy</h3>
+          <p>Na zasedání v Cambridge CIE barvy jen <strong>přepočítala</strong> lineární transformací. Zvolila tři nové základní „barvy“ X, Y, Z tak, aby jejich trojúhelník <strong>obepnul celou podkovu</strong>. Pak jsou všechny skutečné barvy uvnitř a mají jen kladné hodnoty. Žádné skutečné světlo X, Y ani Z vyrobit nejde, jsou to čistě matematické body.</p>
+          <canvas id="rg" aria-label="Diagram chromatičnosti rg s trojúhelníkem pomyslných barev X Y Z"></canvas>
+          <ul class="rules">
+            <li><strong>Vše kladné:</strong> podkova (spektrální barvy) leží celá uvnitř trojúhelníku XYZ, i tam, kde je souřadnice r záporná.</li>
+            <li><strong>Jas jen v Y:</strong> X a Z leží na přímce nulového jasu (tzv. <em>alychne</em>). Proto nesou jen barevnost a celý jas je v Y, které se rovná V(λ) z roku 1924.</li>
+            <li><strong>Bílá uprostřed:</strong> světlo se stejnou energií na všech vlnových délkách (bod E) má X = Y = Z, tedy x = y = ⅓.</li>
+          </ul>
+          <p class="note">Když se tenhle trojúhelník „narovná“ do pravého úhlu, vznikne diagram xy, se kterým pracuješ nahoře. Nové křivky x̄, ȳ, z̄ níže jsou už všude kladné.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
   <section class="card">
     <div>
       <div class="eyebrow">Funkce barevného přizpůsobení CIE 1931 (2°)</div>
@@ -180,22 +258,12 @@ code{font-family:var(--mono);font-size:.92em}
 
   <section class="explain">
     <div class="card">
-      <div class="eyebrow">1 · Problém</div>
-      <h3>Proč nestačilo RGB</h3>
-      <p>Pokusné osoby při pokusech ve 20. letech míchaly tři barevná světla tak, aby se shodovala s barvou ze spektra. Některé barvy (třeba sytá modrozelená) ale šlo dosáhnout jen tak, že se jedno světlo přidalo <em>na druhou stranu</em>. Vyšla <strong>záporná čísla</strong>.</p>
-    </div>
-    <div class="card">
-      <div class="eyebrow">2 · Řešení</div>
-      <h3>Pomyslné základní barvy</h3>
-      <p>CIE proto zvolila tři <strong>neexistující</strong> „barvy“ X, Y, Z, které leží mimo podkovu. Díky tomu jsou všechny skutečné barvy popsané jen kladnými čísly. Y bylo zvoleno tak, aby přesně odpovídalo <strong>jasu</strong>, jak ho vnímá oko.</p>
-    </div>
-    <div class="card">
-      <div class="eyebrow">3 · Zjednodušení</div>
+      <div class="eyebrow">Zjednodušení</div>
       <h3>Z XYZ na xy</h3>
       <p>Tři čísla se špatně kreslí. Proto se jas oddělí a zbylé dvě hodnoty <code>x</code> a <code>y</code> říkají jen „jaká je to barva“ bez ohledu na jas. To je <strong>chromatičnost</strong>, souřadnice v diagramu.</p>
     </div>
     <div class="card">
-      <div class="eyebrow">4 · Praxe</div>
+      <div class="eyebrow">Praxe</div>
       <h3>K čemu to je</h3>
       <p>XYZ je společný „překladový jazyk“. Kamera, monitor, projektor i tiskárna mají vlastní RGB, ale každé z nich jde převést do XYZ. Tak se zajistí, že barva vypadá stejně na různých zařízeních. Trojúhelníky v diagramu jsou <strong>gamuty</strong> běžných standardů.</p>
     </div>
@@ -378,8 +446,86 @@ function update(){
   $('wl-vals').innerHTML=`<b>x̄, ȳ, z̄</b><span>${f3(v[0])}; ${f3(v[1])}; ${f3(v[2])}</span><b>x, y</b><span>${f3(q[0])}; ${f3(q[1])}</span>`;
   $('ratio-o').textContent=Math.round(st.t*100)+' %';
   updateR709(p,Y);
-  draw();drawC();
+  draw();drawC();syncK();
 }
+
+/* ---- příběh vzniku: CIE RGB a kolorimetr ---- */
+const A=[[2.36461,-.89654,-.46807],[-.51517,1.42641,.08876],[.00520,-.01441,1.00920]];/* XYZ → CIE RGB (1931) */
+function inv3(m){const[a,b,c]=m[0],[d,e,f]=m[1],[g,h,i]=m[2];const D=a*(e*i-f*h)-b*(d*i-f*g)+c*(d*h-e*g);return[[(e*i-f*h)/D,(c*h-b*i)/D,(b*f-c*e)/D],[(f*g-d*i)/D,(a*i-c*g)/D,(c*d-a*f)/D],[(d*h-e*g)/D,(b*g-a*h)/D,(a*e-b*d)/D]]}
+const AI=inv3(A);
+const mv=(m,v)=>m.map(r=>r[0]*v[0]+r[1]*v[1]+r[2]*v[2]);
+const NRM=0.17697;/* CIE: x̄ȳz̄ = r̄ḡb̄ přepočtené a dělené 0,17697 */
+const PRIM=[0,1,2].map(k=>[AI[0][k]/NRM,AI[1][k]/NRM,AI[2][k]/NRM]);/* XYZ jednotkových světel R, G, B */
+const rgbbar=l=>mv(A,cmf(l)).map(v=>v*NRM);
+const ks={wl:500,r:.05,g:.1,b:.05,neg:false};
+function fieldXYZ(){const T=cmf(ks.wl).slice(),Mx=[0,0,0];const add=(v,p,k)=>{for(let i=0;i<3;i++)v[i]+=p[i]*k};
+  if(ks.neg)add(T,PRIM[0],ks.r);else add(Mx,PRIM[0],ks.r);add(Mx,PRIM[1],ks.g);add(Mx,PRIM[2],ks.b);return[T,Mx]}
+function drawField(){
+  const c=$('field'),dpr=window.devicePixelRatio||1,w=c.clientWidth;if(!w)return;c.width=c.height=Math.round(w*dpr);
+  const ctx=c.getContext('2d'),W=c.width,[T,Mx]=fieldXYZ();const k=.5/Math.max(T[1],1e-6);
+  let lt=lin(...T.map(v=>v*k)).map(v=>Math.max(0,v)),lm=lin(...Mx.map(v=>v*k)).map(v=>Math.max(0,v));const s=1/Math.max(1,...lt,...lm);
+  const col=l=>`rgb(${l.map(v=>Math.round(gam(Math.min(1,v*s))*255)).join(',')})`;
+  ctx.fillStyle='#000';ctx.fillRect(0,0,W,W);
+  ctx.save();ctx.beginPath();ctx.arc(W/2,W/2,W*.46,0,7);ctx.clip();ctx.fillStyle=col(lt);ctx.fillRect(0,0,W/2,W);ctx.fillStyle=col(lm);ctx.fillRect(W/2,0,W/2,W);ctx.restore();
+  ctx.strokeStyle='#000';ctx.lineWidth=2*dpr;ctx.beginPath();ctx.moveTo(W/2,W*.04);ctx.lineTo(W/2,W*.96);ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.85)';ctx.font=`600 ${11*dpr}px "IBM Plex Sans",sans-serif`;ctx.textAlign='center';ctx.fillText(ks.neg?'test + červená':'test',W*.28,W*.9);ctx.fillText('směs',W*.72,W*.9);
+  const sum=v=>v[0]+v[1]+v[2]||1e-9,xt=[T[0]/sum(T),T[1]/sum(T)],xm=[Mx[0]/sum(Mx),Mx[1]/sum(Mx)];
+  const ok=Math.hypot(xt[0]-xm[0],xt[1]-xm[1])<.012&&Math.abs(Mx[1]/T[1]-1)<.08;
+  const m=$('match');m.classList.toggle('yes',ok);
+  const need=rgbbar(ks.wl);
+  m.textContent=ok?'Shoda! Obě poloviny mají stejnou barvu i jas.':(need[0]<0&&!ks.neg?'Zatím to nejde. Sytost směsi nestačí, zkus přidat červenou k testované polovině.':'Ještě se liší, dolaď poměr a množství světel.');
+}
+function drawRgbCmf(){
+  const c=$('rgbcmf'),dpr=window.devicePixelRatio||1,w=c.clientWidth;if(!w)return;const h=Math.max(180,Math.round(w*.36));c.style.height=h+'px';c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  const ctx=c.getContext('2d'),W=c.width,H=c.height,pl=40*dpr,pr=10*dpr,pt=10*dpr,pb=26*dpr,y0=-.1,y1=.4;
+  const X=l=>pl+(l-380)/(780-380)*(W-pl-pr),Yp=v=>pt+(y1-v)/(y1-y0)*(H-pt-pb);
+  ctx.fillStyle=css('--panel');ctx.fillRect(0,0,W,H);ctx.strokeStyle=css('--grid');ctx.fillStyle=css('--muted');ctx.lineWidth=1;ctx.font=`${11*dpr}px "IBM Plex Mono",monospace`;
+  for(let v=-.1;v<=.401;v+=.1){ctx.beginPath();ctx.moveTo(pl,Yp(v));ctx.lineTo(W-pr,Yp(v));ctx.stroke();ctx.textAlign='right';ctx.fillText(v.toFixed(1).replace('.',','),pl-6*dpr,Yp(v)+4*dpr)}
+  ctx.strokeStyle=css('--fg');ctx.beginPath();ctx.moveTo(pl,Yp(0));ctx.lineTo(W-pr,Yp(0));ctx.stroke();
+  for(let l=400;l<=780;l+=50){ctx.textAlign='center';ctx.fillText(l,X(l),H-8*dpr)}
+  ctx.fillStyle=css('--bad');ctx.globalAlpha=.3;ctx.beginPath();ctx.moveTo(X(380),Yp(0));for(let l=380;l<=780;l+=2){ctx.lineTo(X(l),Yp(Math.min(0,rgbbar(l)[0])))}ctx.lineTo(X(780),Yp(0));ctx.closePath();ctx.fill();ctx.globalAlpha=1;
+  [['--cx',0],['--cy',1],['--cz',2]].forEach(([col,i])=>{ctx.strokeStyle=css(col);ctx.lineWidth=2.5*dpr;ctx.beginPath();for(let l=380;l<=780;l+=2){const v=rgbbar(l)[i];l===380?ctx.moveTo(X(l),Yp(v)):ctx.lineTo(X(l),Yp(v))}ctx.stroke()});
+  ctx.strokeStyle=css('--fg');ctx.lineWidth=1.5*dpr;ctx.setLineDash([4*dpr,4*dpr]);ctx.beginPath();ctx.moveTo(X(ks.wl),pt);ctx.lineTo(X(ks.wl),H-pb);ctx.stroke();ctx.setLineDash([]);
+}
+function drawRg(){
+  const c=$('rg'),dpr=window.devicePixelRatio||1,w=c.clientWidth;if(!w)return;
+  const R0=-1.95,R1=1.55,G0=-.5,G1=2.95,h=Math.round(w*(G1-G0)/(R1-R0));c.style.height=h+'px';c.width=Math.round(w*dpr);c.height=Math.round(h*dpr);
+  const ctx=c.getContext('2d'),W=c.width,H=c.height,s=W/(R1-R0),P=(r,g)=>[(r-R0)*s,H-(g-G0)*s];
+  const rgOf=xyz=>{const v=mv(A,xyz),t=v[0]+v[1]+v[2];return[v[0]/t,v[1]/t]};
+  ctx.fillStyle=css('--plot');ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle=css('--grid');ctx.lineWidth=1;ctx.fillStyle=css('--muted');ctx.font=`${10*dpr}px "IBM Plex Mono",monospace`;
+  for(let v=-1.5;v<=1.51;v+=.5){const[x]=P(v,0);ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();ctx.textAlign='center';ctx.fillText(v.toFixed(1).replace('.',','),x,H-4*dpr)}
+  for(let v=-.5;v<=2.51;v+=.5){const[,y]=P(0,v);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();ctx.textAlign='left';ctx.fillText(v.toFixed(1).replace('.',','),4*dpr,y-3*dpr)}
+  ctx.strokeStyle=css('--fg');ctx.lineWidth=1.2*dpr;const[ox,oy]=P(0,0);ctx.beginPath();ctx.moveTo(0,oy);ctx.lineTo(W,oy);ctx.moveTo(ox,0);ctx.lineTo(ox,H);ctx.stroke();
+  ctx.fillStyle=css('--fg');ctx.font=`600 ${11*dpr}px "IBM Plex Sans",sans-serif`;ctx.textAlign='right';ctx.fillText('r',W-6*dpr,oy-6*dpr);ctx.textAlign='left';ctx.fillText('g',ox+6*dpr,12*dpr);
+  const XP=rgOf([1,0,0]),YP=rgOf([0,1,0]),ZP=rgOf([0,0,1]);
+  /* alychne: přímka X–Z (nulový jas) */
+  const ext=(p,q,t)=>[p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t];const a1=P(...ext(XP,ZP,-.25)),a2=P(...ext(XP,ZP,1.35));
+  ctx.strokeStyle=css('--muted');ctx.setLineDash([5*dpr,4*dpr]);ctx.lineWidth=1.2*dpr;ctx.beginPath();ctx.moveTo(...a1);ctx.lineTo(...a2);ctx.stroke();ctx.setLineDash([]);
+  const am=P(...ext(XP,ZP,.5));ctx.fillStyle=css('--muted');ctx.font=`${10*dpr}px "IBM Plex Mono",monospace`;ctx.textAlign='center';ctx.fillText('alychne – nulový jas',am[0],am[1]+16*dpr);
+  /* trojúhelník XYZ */
+  ctx.fillStyle=css('--fg');ctx.globalAlpha=.06;ctx.beginPath();[XP,YP,ZP].forEach((p,i)=>{const q=P(...p);i?ctx.lineTo(...q):ctx.moveTo(...q)});ctx.closePath();ctx.fill();ctx.globalAlpha=1;
+  ctx.strokeStyle=css('--fg');ctx.lineWidth=2*dpr;ctx.stroke();
+  /* podkova v rg */
+  const loc=[];for(let l=380;l<=700;l+=2){const[x,y]=xyOf(l);loc.push(rgOf([x,y,1-x-y]))}
+  ctx.fillStyle=css('--fg');ctx.globalAlpha=.12;ctx.beginPath();loc.forEach((p,i)=>{const q=P(...p);i?ctx.lineTo(...q):ctx.moveTo(...q)});ctx.closePath();ctx.fill();ctx.globalAlpha=1;
+  ctx.lineWidth=4*dpr;for(let i=1;i<loc.length;i++){const l=380+i*2,[x,y]=xyOf(l),cc=displayRGB(x,y);ctx.strokeStyle=`rgb(${cc.join(',')})`;ctx.beginPath();ctx.moveTo(...P(...loc[i-1]));ctx.lineTo(...P(...loc[i]));ctx.stroke()}
+  ctx.strokeStyle=css('--fg');ctx.lineWidth=1*dpr;ctx.setLineDash([2*dpr,2*dpr]);ctx.beginPath();ctx.moveTo(...P(...loc[0]));ctx.lineTo(...P(...loc[loc.length-1]));ctx.stroke();ctx.setLineDash([]);
+  /* trojúhelník skutečných světel R G B */
+  ctx.strokeStyle=css('--cz');ctx.lineWidth=2*dpr;ctx.beginPath();[[1,0],[0,1],[0,0]].forEach((p,i)=>{const q=P(...p);i?ctx.lineTo(...q):ctx.moveTo(...q)});ctx.closePath();ctx.stroke();
+  const dot=(p,t,col,dx,dy,al='left')=>{const[x,y]=P(...p);ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,4.5*dpr,0,7);ctx.fill();ctx.font=`700 ${12*dpr}px "IBM Plex Sans",sans-serif`;ctx.textAlign=al;ctx.fillText(t,x+dx*dpr,y+dy*dpr)};
+  const fg=css('--fg'),cz=css('--cz');
+  dot(XP,'X',fg,8,4);dot(YP,'Y',fg,8,4);dot(ZP,'Z',fg,-8,16,'right');
+  dot([1,0],'R 700 nm',cz,6,16);dot([0,1],'G 546,1',cz,8,-6);dot([0,0],'B 435,8',cz,-8,16,'right');
+  dot([1/3,1/3],'E',fg,8,-4);
+  const lw=rgOf((()=>{const[x,y]=xyOf(510);return[x,y,1-x-y]})());const[lx,ly]=P(...lw);ctx.fillStyle=fg;ctx.font=`${11*dpr}px "IBM Plex Sans",sans-serif`;ctx.textAlign='left';ctx.fillText('podkova sahá do r < 0',lx+12*dpr,ly+4*dpr);
+}
+function drawStory(){drawField();drawRgbCmf();drawRg()}
+function syncK(){$('wl2-o').textContent=ks.wl+' nm';$('kr-o').textContent=(ks.neg?'−':'')+ks.r.toFixed(3).replace('.',',');$('kg-o').textContent=ks.g.toFixed(3).replace('.',',');$('kb-o').textContent=ks.b.toFixed(3).replace('.',',');$('kr').value=ks.r;$('kg').value=ks.g;$('kb').value=ks.b;$('rneg').checked=ks.neg;$('wl2').value=ks.wl;drawStory()}
+$('wl2').addEventListener('input',e=>{ks.wl=+e.target.value;syncK()});
+[['kr','r'],['kg','g'],['kb','b']].forEach(([id,k])=>$(id).addEventListener('input',e=>{ks[k]=+e.target.value;syncK()}));
+$('rneg').addEventListener('change',e=>{ks.neg=e.target.checked;syncK()});
+$('solve').addEventListener('click',()=>{const n=rgbbar(ks.wl);ks.neg=n[0]<0;ks.r=Math.min(.45,Math.abs(n[0]));ks.g=Math.min(.45,Math.max(0,n[1]));ks.b=Math.min(.45,Math.max(0,n[2]));syncK()});
 
 /* ---- ovládání ---- */
 let drag=null;
