@@ -60,6 +60,25 @@ th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vert
 tr:last-child td{border-bottom:0}
 th{font:500 .75rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 code{font-family:var(--mono);font-size:.92em}
+.presets{display:flex;flex-wrap:wrap;gap:8px}
+.presets button{display:flex;gap:8px;align-items:center}
+.presets button i{width:14px;height:14px;border-radius:50%;border:1px solid var(--line)}
+.r709grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:20px}
+@media (max-width:820px){.r709grid{grid-template-columns:1fr}}
+.sub0{display:grid;gap:10px;align-content:start}
+.chan{display:grid;gap:8px}
+.bar{display:grid;grid-template-columns:1.4em 1fr 4.6em;gap:8px;align-items:center;font:500 .9rem var(--mono);font-variant-numeric:tabular-nums}
+.track{position:relative;height:18px;background:var(--bg);border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.track .ok{position:absolute;top:0;bottom:0;left:25%;width:50%;border-left:1px dashed var(--muted);border-right:1px dashed var(--muted)}
+.track .fill{position:absolute;top:3px;bottom:3px;border-radius:2px}
+.bar .v.bad{color:var(--bad)}
+.methods{display:grid;gap:12px}
+.method{display:grid;grid-template-columns:72px 1fr;gap:14px;align-items:start}
+.msw{width:72px;height:72px;border-radius:10px;border:1px solid var(--line)}
+.strip2{display:grid;gap:6px}
+.strip2 .lbl{font:500 .8rem var(--mono);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:var(--muted)}
+.lbl2{font:500 .8rem var(--mono);margin-top:4px}
+.strip2 canvas{height:40px}
 .formula{font:500 1rem var(--mono);background:var(--bg);border-radius:8px;padding:10px 14px;overflow-x:auto;white-space:nowrap}
 </style></head><body>
 <div class="wrap">
@@ -131,6 +150,32 @@ code{font-family:var(--mono);font-size:.92em}
     </div>
     <canvas id="cmf" aria-label="Graf funkcí x̄, ȳ, z̄ podle vlnové délky"></canvas>
     <p class="note">Svislá čára ukazuje zvolenou vlnovou délku. Každé světlo se rozloží na spektrum, každá vlnová délka se vynásobí těmito třemi křivkami a výsledky se sečtou. Tak vzniknou tři čísla X, Y a Z.</p>
+  </section>
+
+  <section class="card" id="r709">
+    <div>
+      <div class="eyebrow">Rec.709 a extrémní barvy</div>
+      <h2>Co se stane s barvou, kterou monitor neumí</h2>
+    </div>
+    <p class="note">Rec.709 (HD televize, a se stejnými základními barvami i sRGB) pokryje jen asi třetinu podkovy. Vyber skutečné extrémní světlo a sleduj, co s ním udělá převod do Rec.709.</p>
+    <div class="presets" id="extreme"></div>
+    <div class="r709grid">
+      <div class="sub0">
+        <div class="eyebrow">Lineární hodnoty Rec.709 pro vybranou barvu</div>
+        <div class="chan" id="chan"></div>
+        <p class="note" id="chan-note"></p>
+      </div>
+      <div class="methods">
+        <div class="method"><div class="msw" id="m-clip"></div><div><h3>Ořez kanálů</h3><p class="note">Co je pod 0 %, se nastaví na 0 %, co je nad 100 %, na 100 %. Je to jednoduché, ale <strong>mění se odstín</strong>: modrá LED zfialoví, žlutá zezelená.</p></div></div>
+        <div class="method"><div class="msw" id="m-desat"></div><div><h3>Snížení sytosti</h3><p class="note">Barva se posune k bílému bodu D65, dokud se nevejde. <strong>Odstín i jas zůstanou</strong>, ztratí se jen část sytosti. Tak funguje kvalitní mapování gamutu.</p></div></div>
+      </div>
+    </div>
+    <div class="strip2">
+      <div class="lbl"><span>Přechod od bílé k vybrané barvě</span><span>čárka = hranice Rec.709</span></div>
+      <div class="lbl2">Snížení sytosti</div><canvas id="st-desat"></canvas>
+      <div class="lbl2">Ořez kanálů</div><canvas id="st-clip"></canvas>
+      <p class="note">Za hranicí už se barva nemění, i když ve skutečnosti dál sytí. Proto mají v záběru neonové reklamy, laserová show, rudé květy nebo modrá LED světla <strong>„slitou“ plochu bez kresby</strong>. U ořezu navíc přechod mění barvu. Kolorista se tomu brání mapováním gamutu nebo prací v širším prostoru (ACES, Rec.2020) a převodem do Rec.709 až na konci.</p>
+    </div>
   </section>
 
   <section class="explain">
@@ -207,6 +252,15 @@ const D65=[.3127,.3290];
 function inTri(p,t){const [a,b,c]=t;const s=(p1,p2,p3)=>(p1[0]-p3[0])*(p2[1]-p3[1])-(p2[0]-p3[0])*(p1[1]-p3[1]);const d1=s(p,a,b),d2=s(p,b,c),d3=s(p,c,a);return !((d1<0||d2<0||d3<0)&&(d1>0||d2>0||d3>0))}
 function inPoly(p,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const[xi,yi]=poly[i],[xj,yj]=poly[j];if(((yi>p[1])!==(yj>p[1]))&&(p[0]<(xj-xi)*(p[1]-yi)/(yj-yi)+xi))inside=!inside}return inside}
 
+/* Rec.709: lineární RGB, ořez a snížení sytosti */
+const MI=[[.4124,.3576,.1805],[.2126,.7152,.0722],[.0193,.1192,.9505]];
+const toLin=(p,Y)=>lin(...xyY2XYZ(p[0],p[1],Y));
+const linXY=l=>{const v=MI.map(r=>r[0]*l[0]+r[1]*l[1]+r[2]*l[2]);const s=v[0]+v[1]+v[2]||1;return[v[0]/s,v[1]/s]};
+const inRange=l=>l.every(v=>v>=-0.002&&v<=1.002);
+const clipLin=l=>l.map(clamp01);
+function desatLin(l,Y){const w=Math.min(1,Y);let k=1;l.forEach(v=>{const d=v-w;if(d>1e-9)k=Math.min(k,(1-w)/d);else if(d<-1e-9)k=Math.min(k,w/-d)});k=Math.max(0,k);return l.map(v=>clamp01(w+k*(v-w)))}
+const rgbStr=l=>`rgb(${l.map(v=>Math.round(gam(clamp01(v))*255)).join(',')})`;
+
 const st={A:[.30,.60],B:[.64,.33],Y:.6,wl:520,mix:false,t:.5,show:{srgb:true,p3:false,r2020:false}};
 
 /* ---- diagram ---- */
@@ -251,8 +305,38 @@ function draw(){
   const pt=(p,label)=>{const[a,b]=toPx(...p);ctx.lineWidth=3*dpr;ctx.strokeStyle='#000';ctx.beginPath();ctx.arc(a,b,9*dpr,0,7);ctx.stroke();ctx.lineWidth=1.5*dpr;ctx.strokeStyle='#fff';ctx.beginPath();ctx.arc(a,b,9*dpr,0,7);ctx.stroke();ctx.fillStyle=css('--fg');ctx.font=`600 ${12*dpr}px "IBM Plex Sans",sans-serif`;ctx.textAlign='left';ctx.fillText(label,a+12*dpr,b-8*dpr)};
   if(st.mix){const[a1,b1]=toPx(...st.A),[a2,b2]=toPx(...st.B);ctx.strokeStyle=css('--fg');ctx.lineWidth=1.5*dpr;ctx.setLineDash([6*dpr,4*dpr]);ctx.beginPath();ctx.moveTo(a1,b1);ctx.lineTo(a2,b2);ctx.stroke();ctx.setLineDash([]);pt(st.B,'B');
     const m=mixXY();const[mx,my]=toPx(...m);ctx.fillStyle=css('--fg');ctx.beginPath();ctx.arc(mx,my,5*dpr,0,7);ctx.fill();ctx.fillText('směs',mx+8*dpr,my+14*dpr)}
+  const cur=st.mix?mixXY():st.A,L=toLin(cur,st.Y);
+  if(!inRange(L)&&inPoly(cur,LOCUS)){
+    const pc=linXY(clipLin(L)),pd=linXY(desatLin(L,st.Y));const[ax,ay]=toPx(...cur);
+    ctx.font=`600 ${11*dpr}px "IBM Plex Sans",sans-serif`;
+    [[pd,'snížení sytosti',0],[pc,'ořez',1]].forEach(([q,lab,sq])=>{const[bx,by]=toPx(...q);ctx.strokeStyle=css('--fg');ctx.lineWidth=1.2*dpr;ctx.setLineDash([2*dpr,3*dpr]);ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();ctx.setLineDash([]);
+      ctx.fillStyle=rgbStr(sq?clipLin(L):desatLin(L,st.Y));ctx.strokeStyle='#000';ctx.lineWidth=1.5*dpr;ctx.beginPath();if(sq)ctx.rect(bx-6*dpr,by-6*dpr,12*dpr,12*dpr);else{ctx.moveTo(bx,by-7*dpr);ctx.lineTo(bx+7*dpr,by+6*dpr);ctx.lineTo(bx-7*dpr,by+6*dpr);ctx.closePath()}ctx.fill();ctx.stroke();
+      ctx.fillStyle=css('--fg');ctx.textAlign='left';ctx.fillText(lab,bx+10*dpr,by+(sq?14:-6)*dpr)});
+  }
   pt(st.A,'A');
 }
+
+/* ---- Rec.709 panel ---- */
+const EXTREME=[
+  ['Zelený laser 532 nm',()=>xyOf(532),.7],['Sodíková lampa 589 nm',()=>xyOf(589),.6],['Modrá LED 450 nm',()=>xyOf(450),.03],
+  ['Červená LED 630 nm',()=>xyOf(630),.22],['Tyrkysové moře',()=>[.10,.42],.45],['Fialová 405 nm',()=>xyOf(405),.03],['Běžná pleť (v gamutu)',()=>[.40,.36],.35]];
+const ex=$('extreme');
+EXTREME.forEach(([n,f,Y])=>{const b=document.createElement('button');b.type='button';const c=displayRGB(...f());b.innerHTML=`<i style="background:rgb(${c.join(',')})"></i>${n}`;b.addEventListener('click',()=>{st.A=f();st.Y=Y;st.mix=false;$('mix').checked=false;$('mix-row').hidden=true;$('lum').value=Math.max(1,Math.round(Y*100));update();$('r709').scrollIntoView({block:'nearest'})});ex.appendChild(b)});
+function updateR709(p,Y){
+  const L=toLin(p,Y),names=['R','G','B'],cols=['--cx','--cy','--cz'];
+  $('chan').innerHTML=L.map((v,i)=>{const lo=Math.max(-.5,Math.min(1.5,v));const z=25,x=25+lo*50;const left=Math.min(z,x),w=Math.abs(x-z);const bad=v<-0.002||v>1.002;
+    return `<div class="bar"><b>${names[i]}</b><div class="track"><div class="ok"></div><div class="fill" style="left:${left}%;width:${Math.max(w,.6)}%;background:var(${cols[i]})"></div></div><span class="v${bad?' bad':''}">${(v*100).toFixed(0)} %</span></div>`}).join('');
+  const neg=L.some(v=>v<-0.002),over=L.some(v=>v>1.002);
+  $('chan-note').innerHTML=!inPoly(p,LOCUS)?'Bod je mimo podkovu, takovou barvu nelze vytvořit žádným světlem.':
+    neg?'Některý kanál je <strong>záporný</strong>: monitor by musel světlo „ubrat“, což neumí. Barva leží mimo trojúhelník Rec.709.':
+    over?'Odstín se do Rec.709 vejde, ale je <strong>příliš jasný</strong>: kanál by musel svítit víc než naplno. Ubrat jas Y pomůže.':
+    'Všechny kanály jsou mezi 0 a 100 %. Monitor tuto barvu ukáže věrně.';
+  $('m-clip').style.background=rgbStr(clipLin(L));$('m-desat').style.background=rgbStr(desatLin(L,Y));
+  [['st-desat',l=>desatLin(l,Y)],['st-clip',clipLin]].forEach(([id,fn])=>{const c=$(id),ctx=c.getContext('2d'),W=c.width,H=c.height;let edge=-1;
+    for(let x=0;x<W;x++){const s=x/(W-1),q=[D65[0]+s*(p[0]-D65[0]),D65[1]+s*(p[1]-D65[1])],l=toLin(q,Y);if(edge<0&&!inRange(l))edge=x;ctx.fillStyle=rgbStr(fn(l));ctx.fillRect(x,0,1,H)}
+    if(edge>=0){ctx.strokeStyle='#000';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(edge,0);ctx.lineTo(edge,H);ctx.stroke();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(edge,0);ctx.lineTo(edge,H);ctx.stroke();ctx.setLineDash([])}});
+}
+function setupStrips(){const dpr=window.devicePixelRatio||1;['st-desat','st-clip'].forEach(id=>{const c=$(id);c.width=Math.round(c.clientWidth*dpr);c.height=Math.round(40*dpr)})}
 function mixXY(){const a=xyY2XYZ(...st.A,1),b=xyY2XYZ(...st.B,1);const m=a.map((v,i)=>v*(1-st.t)+b[i]*st.t);const s=m[0]+m[1]+m[2];return[m[0]/s,m[1]/s]}
 
 /* ---- CMF graf ---- */
@@ -293,6 +377,7 @@ function update(){
   $('wl-o').textContent=st.wl+' nm';
   $('wl-vals').innerHTML=`<b>x̄, ȳ, z̄</b><span>${f3(v[0])}; ${f3(v[1])}; ${f3(v[2])}</span><b>x, y</b><span>${f3(q[0])}; ${f3(q[1])}</span>`;
   $('ratio-o').textContent=Math.round(st.t*100)+' %';
+  updateR709(p,Y);
   draw();drawC();
 }
 
@@ -310,7 +395,7 @@ $('use-wl').addEventListener('click',()=>{st.A=xyOf(st.wl);update()});
 $('mix').addEventListener('change',e=>{st.mix=e.target.checked;$('mix-row').hidden=!st.mix;update()});
 $('ratio').addEventListener('input',e=>{st.t=e.target.value/100;update()});
 [['t-srgb','srgb'],['t-p3','p3'],['t-2020','r2020']].forEach(([id,k])=>$(id).addEventListener('change',e=>{st.show[k]=e.target.checked;draw()}));
-let rt;function relayout(){setup();setupC();update()}
+let rt;function relayout(){setup();setupC();setupStrips();update()}
 window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(relayout,150)});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>update());
 new MutationObserver(()=>update()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
