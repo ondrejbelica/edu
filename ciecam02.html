@@ -78,6 +78,24 @@ td .chg{font:500 .8rem var(--mono);margin-left:6px}
 .pstep p{font-size:.85rem;color:var(--muted)}
 .explain{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px}
 .explain .card{gap:8px} .explain p{font-size:.95rem}
+.effects{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.eff{background:var(--bg);border-radius:12px;padding:14px;display:grid;gap:10px;align-content:start}
+.eff h3{font-size:1.02rem}
+.eff p{font-size:.9rem}
+.tag{font:500 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid var(--line);justify-self:start}
+.tag.yes{color:var(--ok);border-color:var(--ok)} .tag.part{color:var(--muted)} .tag.no{color:var(--bad);border-color:var(--bad)}
+.demo{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sq{width:100%;display:grid;grid-template-columns:1fr 1fr;border-radius:8px;overflow:hidden}
+.sq div{aspect-ratio:1.4;display:grid;place-items:center}
+.sq i{width:36%;aspect-ratio:1;border-radius:3px}
+.stripes{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.stripes div{height:70px;border-radius:6px}
+.row{display:flex;width:100%;border-radius:8px;overflow:hidden}
+.row i{flex:1;height:46px}
+.hk{display:grid;grid-template-columns:repeat(4,1fr);width:100%;border-radius:8px;overflow:hidden}
+.hk i{height:56px}
+#banana{width:100%;max-width:220px;height:auto;margin:0 auto;display:block}
+.hint{font:500 .75rem var(--mono);color:var(--muted)}
 .ttl{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:14px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style></head><body>
@@ -98,7 +116,7 @@ td .chg{font:500 .8rem var(--mono);margin-left:6px}
       <div class="scene">
         <h3>Co dopadá na oko</h3>
         <div class="room" id="roomRaw"></div>
-        <p class="note">Takové světlo zachytí fotoaparát bez vyvážení bílé nebo přístroj.</p>
+        <p class="note">Takto scénu zachytí <strong>fotoaparát s pevným vyvážením bílé na denní světlo</strong> (6500 K, bílý bod D65) nebo kolorimetr. Pod tímto světlem: <strong id="cctNote"></strong>.</p>
       </div>
       <div class="scene">
         <h3>Co vidíme po přizpůsobení oka</h3>
@@ -164,6 +182,83 @@ td .chg{font:500 .8rem var(--mono);margin-left:6px}
         <p class="note">Se vzrůstajícím osvětlením se rozdíly jasu mezi světlými a tmavými předměty <strong>zvětšují</strong>. Scéna na slunci působí kontrastněji, i když poměr odrazivostí zůstal stejný.</p>
       </div>
     </div>
+  </section>
+
+  <section class="card" id="effects">
+    <div>
+      <div class="eyebrow">Poznámky · zrakové efekty</div>
+      <h2>Co všechno ovlivňuje, jakou barvu vidíme</h2>
+    </div>
+    <p class="note">Barva, kterou vnímáme, není jen vlastnost světla. Mění ji osvětlení, jas, okolí, velikost plochy i paměť. U každého efektu je uvedeno, jestli s ním CIECAM02 počítá. Ukázky fungují nejlépe na monitoru v tlumeně osvětlené místnosti.</p>
+    <div class="effects">
+      <div class="eff">
+        <h3>Barevná stálost (color constancy)</h3>
+        <span class="tag yes">CIECAM02 ano · adaptace D</span>
+        <p>Barvy předmětů vnímáme téměř stejně pod různým osvětlením, protože mozek „odečítá“ barvu světla. Stálost není úplná: pod žárovkou zůstane lehce teplý nádech. Viz pokus 1 nahoře.</p>
+      </div>
+      <div class="eff">
+        <h3>Bezoldův–Brückeův efekt</h3>
+        <span class="tag no">CIECAM02 ne</span>
+        <div class="row" id="bb"></div>
+        <p>Se zvyšující se intenzitou se mění vnímaný <strong>odstín</strong>: oranžové a žlutozelené tóny se posouvají ke žluté, fialové a modrozelené k modré. Neměnné zůstávají jen tři odstíny (asi 478, 503 a 578 nm). Políčka mají stejnou chromatičnost, liší se jen jasem.</p>
+      </div>
+      <div class="eff">
+        <h3>Abneyho efekt</h3>
+        <span class="tag no">CIECAM02 ne</span>
+        <div class="row" id="abney"></div>
+        <p>Přidáním bílého světla se nemění jen sytost, ale i <strong>odstín</strong>. Modrá smíchaná s bílou působí do fialova, přestože fyzicky leží na přímce k bílé. Proto se v diagramu xy linie stejného odstínu zakřivují.</p>
+      </div>
+      <div class="eff">
+        <h3>Helmholtzův–Kohlrauschův efekt</h3>
+        <span class="tag no">CIECAM02 ne</span>
+        <div class="hk"><i style="background:#ff0000"></i><i style="background:#7f7f7f"></i><i style="background:#0000ff"></i><i style="background:#4c4c4c"></i></div>
+        <p>Sytá barva působí <strong>jasněji</strong> než šedá se stejným naměřeným jasem. Červená a šedá vlevo mají stejný jas Y, modrá a tmavá šedá vpravo také. Přesto barevná pole vypadají světlejší.</p>
+      </div>
+      <div class="eff">
+        <h3>Huntův a Stevensův efekt</h3>
+        <span class="tag yes">CIECAM02 ano · F<sub>L</sub></span>
+        <p>Se vzrůstajícím osvětlením roste vnímaná pestrost (Hunt) i kontrast jasu (Stevens). Na slunci působí scéna pestřeji a kontrastněji než za šera. Viz pokus 3.</p>
+      </div>
+      <div class="eff">
+        <h3>Bartlesonův–Brenemanův efekt</h3>
+        <span class="tag yes">CIECAM02 ano · okolí</span>
+        <p>V tmavém okolí působí obraz méně kontrastně, tmavé tóny se zdají světlejší. Proto má kino vyšší gamu než monitor v kanceláři. Viz pokus 2.</p>
+      </div>
+      <div class="eff">
+        <h3>Simultánní kontrast</h3>
+        <span class="tag part">CIECAM02 jen světlost · Y<sub>b</sub></span>
+        <div class="sq"><div style="background:#d9b400"><i style="background:#8c8c8c"></i></div><div style="background:#2f4fb0"><i style="background:#8c8c8c"></i></div></div>
+        <p>Barva se „odtlačuje“ od okolí. Obě šedá políčka jsou úplně stejná, na žlutém působí namodrale, na modrém nažloutle. CIECAM02 bere v úvahu jen jas pozadí, ne jeho barvu.</p>
+      </div>
+      <div class="eff">
+        <h3>Asimilace (von Bezoldův efekt)</h3>
+        <span class="tag no">CIECAM02 ne</span>
+        <div class="stripes"><div style="background:repeating-linear-gradient(90deg,#c0392b 0 6px,#ffffff 6px 9px)"></div><div style="background:repeating-linear-gradient(90deg,#c0392b 0 6px,#111111 6px 9px)"></div></div>
+        <p>U jemných vzorů je to opačně než u kontrastu: barva se k okolí <strong>přibližuje</strong>. Stejná červená mezi bílými proužky působí světleji, mezi černými tmavěji. Efekt se mění se vzdáleností pozorování.</p>
+      </div>
+      <div class="eff">
+        <h3>Paměťové barvy</h3>
+        <span class="tag no">CIECAM02 ne · mozek</span>
+        <svg id="banana" viewBox="0 0 220 120" aria-label="Šedý banán"><path d="M18 34 C 40 92, 150 112, 204 48 C 206 42, 200 38, 195 42 C 150 86, 70 82, 34 26 C 30 20, 16 24, 18 34 Z" fill="#9a9a9a"/><path d="M196 44 l10 -8 l4 6 l-9 7 Z" fill="#5a5a5a"/></svg>
+        <p>Barvy známých předmětů (banán, nebe, tráva, pleť) si pamatujeme <strong>sytější</strong>, než ve skutečnosti jsou, a mozek je do vnímání „dosazuje“. Řada lidí vidí šedý banán lehce nažloutle. Proto jsou fotografie s přehnaně sytou oblohou a trávou oblíbené a při korekci pleti jsme nejpřísnější.</p>
+      </div>
+      <div class="eff">
+        <h3>Purkyňův jev</h3>
+        <span class="tag no">CIECAM02 ne · jen denní vidění</span>
+        <p>Objevil ho český fyziolog J. E. Purkyně (1825). Za šera přebírají vidění tyčinky, citlivé hlavně na modrozelenou. Červené květy proto večer ztmavnou dřív než modré, i když ve dne vypadají stejně jasně. Pro filmaře: proto se noc tradičně tónuje do modra.</p>
+      </div>
+      <div class="eff">
+        <h3>Helsonův–Juddův efekt</h3>
+        <span class="tag part">CIECAM02 jen částečně</span>
+        <p>Pod silně barevným světlem nejsou šedé předměty všechny „vyrovnané“. Světlé šedé převezmou barvu světla, tmavé šedé působí v barvě doplňkové. Pod červeným světlem jsou světlé předměty narůžovělé a tmavé nazelenalé.</p>
+      </div>
+      <div class="eff">
+        <h3>Zostření (crispening)</h3>
+        <span class="tag no">CIECAM02 ne</span>
+        <p>Rozdíl mezi dvěma barvami vidíme <strong>nejlépe</strong>, když jsou podobné pozadí. Dvě blízké šedé na šedém pozadí rozlišíme snáz než na černém nebo bílém. Proto se barvy hodnotí na neutrálním šedém pozadí.</p>
+      </div>
+    </div>
+    <p class="note">Podrobně tyto efekty shrnuje kniha M. D. Fairchilda <em>Color Appearance Models</em>, ze které vychází i řada modelů vzhledu včetně CIECAM02.</p>
   </section>
 
   <section class="card">
@@ -280,6 +375,7 @@ function scene(){
   const wc=fwd(underLight(wall,D65,Wi),vI);paint('roomSeen',seen,inv(wc.J,wc.C,wc.h,vS));
   $('D').value=D;$('D-o').textContent=fmt(D,2);$('D').disabled=st.auto&&st.anim==null;
   [...$('illums').children].forEach((b,i)=>b.classList.toggle('on',i===st.ill));
+  $('cctNote').textContent=ILL[st.ill][0].toLowerCase();
   measure(raw);
 }
 function lab(X){const f=t=>t>216/24389?Math.cbrt(t):(24389/27*t+16)/116;const fx=f(X[0]/D65[0]),fy=f(X[1]/D65[1]),fz=f(X[2]/D65[2]);return[116*fy-16,500*(fx-fy),200*(fy-fz)]}
@@ -347,7 +443,13 @@ function hunt(){
 }
 $('La').addEventListener('input',hunt);
 
-function all(){scene();surround();hunt()}
+/* ---- ukázky efektů ---- */
+function effects(){
+  const row=(id,list)=>{$(id).innerHTML=list.map(X=>`<i style="background:${xyz2css(X)}"></i>`).join('')};
+  row('bb',[4,8,15,25,38].map(Y=>xyY(.52,.44,Y)));
+  const B=mv(MI709,[0,0,1]).map(v=>v*100);row('abney',[0,.03,.08,.16,.3].map(k=>B.map((v,i)=>v+D65[i]*k)));
+}
+function all(){scene();surround();hunt();effects()}
 let rt;window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(hunt,150)});
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',hunt);
 new MutationObserver(hunt).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
